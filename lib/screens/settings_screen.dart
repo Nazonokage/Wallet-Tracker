@@ -31,14 +31,17 @@ class SettingsScreen extends StatelessWidget {
               },
             ),
           ),
-          // Theme picker
+
+          // ✅ Theme picker – add this block
+// inside ListView children:
           ListTile(
             title: const Text('Theme'),
-            subtitle: Text('Current: ${settings.currentTheme.name}'),
+            subtitle:
+                Text('Current: ${settings.currentTheme.name.toUpperCase()}'),
             trailing: DropdownButton<AppTheme>(
               value: settings.currentTheme,
               items: AppTheme.values.map((theme) {
-                return DropdownMenuItem(
+                return DropdownMenuItem<AppTheme>(
                   value: theme,
                   child: Text(theme.name.toUpperCase()),
                 );
@@ -48,6 +51,15 @@ class SettingsScreen extends StatelessWidget {
               },
             ),
           ),
+          // Dark Mode toggle
+          ListTile(
+            title: const Text('Dark Mode'),
+            trailing: Switch(
+              value: settings.isDarkMode,
+              onChanged: (value) => settings.toggleDarkMode(value),
+            ),
+          ),
+
           const Divider(),
           // Clear data (unchanged)
           ListTile(

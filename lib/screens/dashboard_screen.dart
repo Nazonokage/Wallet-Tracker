@@ -55,12 +55,19 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       return Dismissible(
                         key: Key(txn.id.toString()),
                         direction: DismissDirection.horizontal,
-                        onDismissed: (direction) {
+                        // ✅ Use confirmDismiss to control behavior
+                        confirmDismiss: (direction) async {
                           if (direction == DismissDirection.endToStart) {
-                            _openEditModal(context, txn);
+                            // Swipe left → Edit: don't dismiss, just open modal
+                            WidgetsBinding.instance.addPostFrameCallback((_) {
+                              if (mounted) _openEditModal(context, txn);
+                            });
+                            return false; // prevents dismissal
                           } else {
+                            // Swipe right → Delete: remove immediately
                             provider.softDelete(txn.id!);
                             _showUndoSnackBar(context);
+                            return true; // allows dismissal
                           }
                         },
                         background: Container(color: Colors.green),
@@ -131,57 +138,77 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
+  // ---------- Modals (all using centered Dialog) ----------
+
   void _openIncomeModal(BuildContext context) {
-    showModalBottomSheet(
+    showDialog(
       context: context,
-      isScrollControlled: true,
-      builder: (_) => IncomeModal(
-        onSave: (txn) {
-          Provider.of<TransactionProvider>(context, listen: false)
-              .addTransaction(txn);
-        },
+      barrierDismissible: true,
+      builder: (_) => Dialog(
+        insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        child: IncomeModal(
+          onSave: (txn) {
+            Provider.of<TransactionProvider>(context, listen: false)
+                .addTransaction(txn);
+          },
+        ),
       ),
     );
   }
 
   void _openExpenseModal(BuildContext context) {
-    print("🔵 Opening Expense Modal"); // <-- add this
-
-    showModalBottomSheet(
+    showDialog(
       context: context,
-      isScrollControlled: true,
-      builder: (_) => ExpenseModal(
-        onSave: (txn) {
-          Provider.of<TransactionProvider>(context, listen: false)
-              .addTransaction(txn);
-        },
+      barrierDismissible: true,
+      builder: (_) => Dialog(
+        insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        child: ExpenseModal(
+          onSave: (txn) {
+            Provider.of<TransactionProvider>(context, listen: false)
+                .addTransaction(txn);
+          },
+        ),
       ),
     );
   }
 
   void _openEditModal(BuildContext context, Transaction txn) {
     if (txn.type == TransactionType.income) {
-      showModalBottomSheet(
+      showDialog(
         context: context,
-        isScrollControlled: true,
-        builder: (_) => IncomeModal(
-          initialTransaction: txn,
-          onSave: (updated) {
-            Provider.of<TransactionProvider>(context, listen: false)
-                .updateTransaction(updated);
-          },
+        barrierDismissible: true,
+        builder: (_) => Dialog(
+          insetPadding:
+              const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          child: IncomeModal(
+            initialTransaction: txn,
+            onSave: (updated) {
+              Provider.of<TransactionProvider>(context, listen: false)
+                  .updateTransaction(updated);
+            },
+          ),
         ),
       );
     } else {
-      showModalBottomSheet(
+      showDialog(
         context: context,
-        isScrollControlled: true,
-        builder: (_) => ExpenseModal(
-          initialTransaction: txn,
-          onSave: (updated) {
-            Provider.of<TransactionProvider>(context, listen: false)
-                .updateTransaction(updated);
-          },
+        barrierDismissible: true,
+        builder: (_) => Dialog(
+          insetPadding:
+              const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          child: ExpenseModal(
+            initialTransaction: txn,
+            onSave: (updated) {
+              Provider.of<TransactionProvider>(context, listen: false)
+                  .updateTransaction(updated);
+            },
+          ),
         ),
       );
     }

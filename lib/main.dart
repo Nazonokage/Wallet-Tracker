@@ -22,7 +22,7 @@ class MyApp extends StatelessWidget {
         builder: (context, settings, child) {
           return MaterialApp(
             title: 'WalletTracker',
-            theme: _buildTheme(settings.currentTheme),
+            theme: _buildTheme(settings.currentTheme, settings.isDarkMode),
             home: const MainScreen(),
             debugShowCheckedModeBanner: false,
           );
@@ -31,26 +31,47 @@ class MyApp extends StatelessWidget {
     );
   }
 
-  ThemeData _buildTheme(AppTheme theme) {
+  ThemeData _buildTheme(AppTheme theme, bool isDark) {
+    // base seed color for each theme
+    Color seed;
     switch (theme) {
       case AppTheme.mint:
-        return ThemeData(
-          colorScheme: ColorScheme.fromSeed(seedColor: Colors.teal),
-          useMaterial3: true,
-        );
+        seed = Colors.teal;
+        break;
       case AppTheme.sunset:
-        return ThemeData(
-          colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepOrange),
-          useMaterial3: true,
-        );
+        seed = Colors.deepOrange;
+        break;
       case AppTheme.ocean:
-        return ThemeData(
-          colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
-          useMaterial3: true,
-        );
+        seed = Colors.blue;
+        break;
+      case AppTheme.lavender:
+        seed = const Color(0xFF9C7B9E); // soft purple
+        break;
+      case AppTheme.rose:
+        seed = const Color(0xFFE8A2A2); // soft pink
+        break;
     }
+
+    final brightness = isDark ? Brightness.dark : Brightness.light;
+    final colorScheme = ColorScheme.fromSeed(
+      seedColor: seed,
+      brightness: brightness,
+    );
+
+    return ThemeData(
+      colorScheme: colorScheme,
+      useMaterial3: true,
+      // optional: override card colors, etc.
+      cardTheme: CardThemeData(
+        color: colorScheme.surface,
+        elevation: 2,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      ),
+    );
   }
 }
+
+// ... rest of MainScreen unchanged
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});

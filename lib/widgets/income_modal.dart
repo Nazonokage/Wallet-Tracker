@@ -35,21 +35,25 @@ class _IncomeModalState extends State<IncomeModal> {
   @override
   Widget build(BuildContext context) {
     final currency = Provider.of<SettingsProvider>(context).currencySymbol;
-    return Container(
+    final theme = Theme.of(context);
+    return Padding(
       padding: const EdgeInsets.all(20),
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Center(
-            child: Text(
-              widget.initialTransaction == null ? 'Add Income' : 'Edit Income',
-              style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-            ),
+          Row(
+            children: [
+              Icon(Icons.add_circle_outline, color: Colors.green.shade400),
+              const SizedBox(width: 8),
+              Text(
+                widget.initialTransaction == null
+                    ? 'Add Income'
+                    : 'Edit Income',
+                style: theme.textTheme.titleLarge
+                    ?.copyWith(fontWeight: FontWeight.bold),
+              ),
+            ],
           ),
           const SizedBox(height: 16),
           TextField(
@@ -57,10 +61,26 @@ class _IncomeModalState extends State<IncomeModal> {
             decoration: InputDecoration(
               labelText: 'Amount',
               prefixText: '$currency ',
-              border:
-                  OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+              prefixStyle: const TextStyle(fontWeight: FontWeight.bold),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: theme.colorScheme.outline),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: theme.colorScheme.outlineVariant),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(
+                  color: theme.colorScheme.primary,
+                  width: 2,
+                ),
+              ),
               filled: true,
-              fillColor: Colors.grey.shade50,
+              fillColor: theme.colorScheme.surfaceContainerHighest,
+              contentPadding:
+                  const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
             ),
             keyboardType: TextInputType.number,
           ),
@@ -69,10 +89,25 @@ class _IncomeModalState extends State<IncomeModal> {
             controller: _remarkController,
             decoration: InputDecoration(
               labelText: 'Remark (optional)',
-              border:
-                  OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: theme.colorScheme.outline),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: theme.colorScheme.outlineVariant),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(
+                  color: theme.colorScheme.primary,
+                  width: 2,
+                ),
+              ),
               filled: true,
-              fillColor: Colors.grey.shade50,
+              fillColor: theme.colorScheme.surfaceContainerHighest,
+              contentPadding:
+                  const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
             ),
           ),
           const SizedBox(height: 20),
@@ -95,14 +130,18 @@ class _IncomeModalState extends State<IncomeModal> {
                 Navigator.pop(context);
               },
               style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(vertical: 14),
+                padding: const EdgeInsets.symmetric(vertical: 16),
                 shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12)),
+                  borderRadius: BorderRadius.circular(14),
+                ),
               ),
-              child: const Text('Save', style: TextStyle(fontSize: 18)),
+              child: const Text(
+                'Save',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+              ),
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 8),
         ],
       ),
     );
