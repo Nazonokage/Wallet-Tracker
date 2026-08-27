@@ -1,0 +1,47 @@
+name: wallettracker
+description: A personal expense tracker.
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: ">=3.0.0 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # Database
+  sqflite: ^2.3.0
+  path_provider: ^2.1.0
+  path: ^1.9.0
+
+  shared_preferences: ^2.3.2
+
+  # flutter_neumorphic: ^3.2.0
+  # particles_flutter: ^1.0.0
+
+
+
+  # State
+  provider: ^6.1.1
+
+  # Charts
+  fl_chart: ^0.67.0
+
+  # Notifications (optional for now)
+  # flutter_local_notifications: ^16.3.2
+
+  # CSV + sharing
+  csv: ^6.0.0
+  # share_plus: ^6.3.0   
+
+  # Utilities
+  intl: ^0.18.1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.0
+
+flutter:
+  uses-material-design: true
