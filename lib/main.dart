@@ -21,7 +21,7 @@ class MyApp extends StatelessWidget {
       child: Consumer<SettingsProvider>(
         builder: (context, settings, child) {
           return MaterialApp(
-            title: 'WalletTracker',
+            title: 'Wallet Tracker',
             theme: _buildTheme(settings.currentTheme, settings.isDarkMode),
             home: const MainScreen(),
             debugShowCheckedModeBanner: false,

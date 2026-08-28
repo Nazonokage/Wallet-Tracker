@@ -1,7 +1,7 @@
 name: wallettracker
 description: A personal expense tracker.
 publish_to: 'none'
-version: 1.0.0+1
+version: 1.2.0+2   # format: major.minor.patch+build
 
 environment:
   sdk: ">=3.0.0 <4.0.0"

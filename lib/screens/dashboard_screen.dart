@@ -55,23 +55,99 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       return Dismissible(
                         key: Key(txn.id.toString()),
                         direction: DismissDirection.horizontal,
-                        // ✅ Use confirmDismiss to control behavior
                         confirmDismiss: (direction) async {
                           if (direction == DismissDirection.endToStart) {
-                            // Swipe left → Edit: don't dismiss, just open modal
+                            // Swipe from right → left = DELETE (orange bar,
+                            // shown via `secondaryBackground` below).
+                            final confirm = await showDialog<bool>(
+                              context: context,
+                              builder: (_) => AlertDialog(
+                                title: const Text('Delete Transaction?'),
+                                content:
+                                    const Text('This action cannot be undone.'),
+                                actions: [
+                                  TextButton(
+                                    onPressed: () =>
+                                        Navigator.pop(context, false),
+                                    child: const Text('Cancel'),
+                                  ),
+                                  TextButton(
+                                    onPressed: () =>
+                                        Navigator.pop(context, true),
+                                    style: TextButton.styleFrom(
+                                      foregroundColor: Colors.red,
+                                    ),
+                                    child: const Text('Delete'),
+                                  ),
+                                ],
+                              ),
+                            );
+                            if (confirm == true) {
+                              provider.softDelete(txn.id!);
+                              _showUndoSnackBar(context);
+                              return true; // remove the item
+                            } else {
+                              return false; // keep it
+                            }
+                          } else {
+                            // Swipe from left → right = EDIT (green bar,
+                            // shown via `background` below).
                             WidgetsBinding.instance.addPostFrameCallback((_) {
                               if (mounted) _openEditModal(context, txn);
                             });
-                            return false; // prevents dismissal
-                          } else {
-                            // Swipe right → Delete: remove immediately
-                            provider.softDelete(txn.id!);
-                            _showUndoSnackBar(context);
-                            return true; // allows dismissal
+                            return false; // do NOT remove the item
                           }
                         },
-                        background: Container(color: Colors.green),
-                        secondaryBackground: Container(color: Colors.orange),
+                        // ─── LEFT‑TO‑RIGHT SWIPE (Edit) ────────────────────────
+                        // Flutter shows `background` while dragging startToEnd
+                        // (left → right). The revealed strip grows from the
+                        // LEFT edge, so align the label left (centerLeft) so
+                        // it's visible as early as possible in the drag.
+                        background: Container(
+                          color: Colors.green,
+                          alignment: Alignment.centerLeft,
+                          padding: const EdgeInsets.only(left: 24),
+                          child: const Row(
+                            mainAxisAlignment: MainAxisAlignment.start,
+                            children: [
+                              Icon(Icons.edit, color: Colors.white),
+                              SizedBox(width: 8),
+                              Text(
+                                'Edit',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        // ─── RIGHT‑TO‑LEFT SWIPE (Delete) ──────────────────────
+                        // Flutter shows `secondaryBackground` while dragging
+                        // endToStart (right → left). The revealed strip grows
+                        // from the RIGHT edge, so align the label right
+                        // (centerRight) so it's visible as early as possible.
+                        secondaryBackground: Container(
+                          color: Colors.orange,
+                          alignment: Alignment.centerRight,
+                          padding: const EdgeInsets.only(right: 24),
+                          child: const Row(
+                            mainAxisAlignment: MainAxisAlignment.end,
+                            children: [
+                              Text(
+                                'Delete',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              SizedBox(width: 8),
+                              Icon(Icons.delete, color: Colors.white),
+                            ],
+                          ),
+                        ),
                         child: TransactionListItem(txn: txn),
                       );
                     },
@@ -138,8 +214,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  // ---------- Modals (all using centered Dialog) ----------
-
+  // ---------- Modal methods (unchanged) ----------
   void _openIncomeModal(BuildContext context) {
     showDialog(
       context: context,
