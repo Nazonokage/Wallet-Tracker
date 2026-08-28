@@ -84,6 +84,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             );
                             if (confirm == true) {
                               provider.softDelete(txn.id!);
+                              if (!context.mounted) return true;
                               _showUndoSnackBar(context);
                               return true; // remove the item
                             } else {
