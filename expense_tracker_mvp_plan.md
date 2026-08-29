@@ -148,7 +148,7 @@ Each phase should be functionally testable on its own before moving to the next 
 - **Analytics v1 = one chart + one list.** Trend lines, multi-month comparisons, exportable reports — all good ideas, all v2+.
 - **Clear data is destructive and irreversible** — the double confirmation is the right call. Consider also disabling the second confirm button for ~1 second after it appears, so a fast double-tap can't accidentally confirm both dialogs in a row.
 - **Backups**: not in scope for MVP, but worth noting — since this is local-only SQLite, uninstalling the app loses all data. Could flag this to the user once in Settings ("Your data is stored only on this device") so it's not a surprise later. CSV export actually doubles as a manual backup, which is a nice side benefit.
-- **Exact alarm permission on Android 12+**: Android restricts apps from scheduling exact-time alarms without a special permission (`SCHEDULE_EXACT_ALARM`). Since you want alarm-clock-style precision for reminders, budget time for this — it's a bit more setup than a basic notification.
+- **Exact alarm permission on Android 12+**: Android restricts apps from scheduling exact-time alarms without a special permission (`SCHEDULE_EXACT_ALARM`). Since you want alarm-clock-style precision for reminders, Expense time for this — it's a bit more setup than a basic notification.
 - **CSV export scope**: keep the file format dead simple (one row per transaction, flat columns) so it opens cleanly in Excel/Sheets without cleanup.
 - **Named themes**: start with just 2–3 (Mint, Sunset, Ocean) rather than a full custom color picker — a picker sounds nice but adds real UI/state complexity for a v1. Can expand the theme list later without any architecture change if colors are defined as a simple map from the start.
 
@@ -156,9 +156,9 @@ Each phase should be functionally testable on its own before moving to the next 
 
 ## 8. Explicitly Out of Scope for MVP
 - Cloud sync / accounts / login
-- Multiple wallets or accounts
+- Multiple Expenses or accounts
 - Recurring transactions
-- Budgets / spending limits
+- Expenses / spending limits
 - Custom categories
 - PDF export (CSV only for v1)
 - Full custom color picker (fixed named themes only for v1)

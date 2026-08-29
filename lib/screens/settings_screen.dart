@@ -4,8 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:csv/csv.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:wallettracker/models/transaction.dart' show TransactionType;
+import 'package:expense_tracker/models/transaction.dart' show TransactionType;
 import '../providers/settings_provider.dart' show SettingsProvider, AppTheme;
 import '../providers/transaction_provider.dart';
 import '../db/database_helper.dart';
@@ -216,7 +215,7 @@ class SettingsScreen extends StatelessWidget {
       if (shouldShare == true) {
         await Share.shareXFiles(
           [XFile(filePath)],
-          text: 'My transaction data from Wallet Tracker',
+          text: 'My transaction data from Expense Tracker',
         );
       }
     } catch (e) {

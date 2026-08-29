@@ -1,3 +1,5 @@
+import 'wallet.dart';
+
 enum Category { food, commute, bills, shopping, others }
 
 enum TransactionType { income, expense }
@@ -9,6 +11,7 @@ class Transaction {
   Category? category; // null for income
   String? remark;
   DateTime date;
+  int walletId; // ✅ which wallet (Cash, BDO, GCash, ...) this belongs to
 
   Transaction({
     this.id,
@@ -17,6 +20,8 @@ class Transaction {
     this.category,
     this.remark,
     required this.date,
+    this.walletId =
+        Wallet.cashWalletId, // ✅ defaults to "Cash" for backward compatibility
   });
 
   Map<String, dynamic> toMap() {
@@ -27,6 +32,7 @@ class Transaction {
       'category': category?.index, // store enum index (0..4)
       'remark': remark,
       'date': date.toIso8601String(),
+      'wallet_id': walletId,
     };
   }
 
@@ -37,11 +43,12 @@ class Transaction {
           ? TransactionType.income
           : TransactionType.expense,
       amount: map['amount'].toDouble(),
-      category: map['category'] != null
-          ? Category.values[map['category']]
-          : null,
+      category:
+          map['category'] != null ? Category.values[map['category']] : null,
       remark: map['remark'],
       date: DateTime.parse(map['date']),
+      // ✅ Old rows created before this column existed fall back to Cash.
+      walletId: map['wallet_id'] ?? Wallet.cashWalletId,
     );
   }
 

@@ -1,11 +1,15 @@
+import 'package:expense_tracker/utils/formatter.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:wallettracker/providers/settings_provider.dart';
+import 'package:expense_tracker/providers/settings_provider.dart';
 import '../providers/transaction_provider.dart';
+import '../providers/wallet_provider.dart';
 import '../models/transaction.dart';
+import '../models/wallet.dart';
 import '../widgets/transaction_list_item.dart';
 import '../widgets/income_modal.dart';
 import '../widgets/expense_modal.dart';
+import '../widgets/wallet_selector.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -21,6 +25,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
       body: SafeArea(
         child: Column(
           children: [
+            const SizedBox(height: 8),
+            const WalletSelector(),
+            const SizedBox(height: 8),
             _buildBalanceCard(context),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -100,10 +107,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           }
                         },
                         // ─── LEFT‑TO‑RIGHT SWIPE (Edit) ────────────────────────
-                        // Flutter shows `background` while dragging startToEnd
-                        // (left → right). The revealed strip grows from the
-                        // LEFT edge, so align the label left (centerLeft) so
-                        // it's visible as early as possible in the drag.
                         background: Container(
                           color: Colors.green,
                           alignment: Alignment.centerLeft,
@@ -125,10 +128,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           ),
                         ),
                         // ─── RIGHT‑TO‑LEFT SWIPE (Delete) ──────────────────────
-                        // Flutter shows `secondaryBackground` while dragging
-                        // endToStart (right → left). The revealed strip grows
-                        // from the RIGHT edge, so align the label right
-                        // (centerRight) so it's visible as early as possible.
                         secondaryBackground: Container(
                           color: Colors.orange,
                           alignment: Alignment.centerRight,
@@ -182,29 +181,40 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
+  // ✅ Balance now factors in the selected wallet's starting balance (or the
+  // combined starting balance of every wallet, for the "All" view), plus
+  // that wallet's own income/expense — TransactionProvider is already
+  // scoped to the selected wallet via `walletFilter`.
   Widget _buildBalanceCard(BuildContext context) {
-    return Consumer<TransactionProvider>(
-      builder: (ctx, provider, _) {
-        final balance = provider.totalBalance;
-        final weekIncome = provider.weeklyIncome;
-        final weekExpense = provider.weeklyExpense;
+    return Consumer2<TransactionProvider, WalletProvider>(
+      builder: (ctx, txnProvider, walletProvider, _) {
+        final selectedWallet = walletProvider.selectedWallet;
+        final startingBalance = selectedWallet != null
+            ? selectedWallet.initialBalance
+            : walletProvider.combinedInitialBalance;
+        final balance = startingBalance + txnProvider.totalBalance;
+        final weekIncome = txnProvider.weeklyIncome;
+        final weekExpense = txnProvider.weeklyExpense;
         final settings = Provider.of<SettingsProvider>(context);
         final currency = settings.currencySymbol;
+        final label = selectedWallet != null
+            ? '${selectedWallet.icon} ${selectedWallet.name} Balance'
+            : 'Balance (All wallets)';
         return Card(
-          margin: const EdgeInsets.all(16),
+          margin: const EdgeInsets.symmetric(horizontal: 16),
           child: Padding(
             padding: const EdgeInsets.all(20.0),
             child: Column(
               children: [
-                const Text('Balance', style: TextStyle(fontSize: 18)),
+                Text(label, style: const TextStyle(fontSize: 18)),
                 Text(
-                  '$currency${balance.toStringAsFixed(2)}',
+                  '$currency${formatAmount(balance)}',
                   style: const TextStyle(
                       fontSize: 32, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'This week: +$currency${weekIncome.toStringAsFixed(2)} / −$currency${weekExpense.toStringAsFixed(2)}',
+                  'This week: +$currency${formatAmount(weekIncome)} / −$currency${formatAmount(weekExpense)}',
                   style: const TextStyle(fontSize: 16),
                 ),
               ],
@@ -215,7 +225,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  // ---------- Modal methods (unchanged) ----------
+  // ✅ New transactions default to whichever wallet is currently selected
+  // in the switcher. If "All" is selected, they default to Cash — the user
+  // can still change wallet inside the modal's dropdown.
+  int _currentDefaultWalletId(BuildContext context) {
+    return Provider.of<WalletProvider>(context, listen: false)
+            .selectedWalletId ??
+        Wallet.cashWalletId;
+  }
+
   void _openIncomeModal(BuildContext context) {
     showDialog(
       context: context,
@@ -224,6 +242,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         child: IncomeModal(
+          defaultWalletId: _currentDefaultWalletId(context),
           onSave: (txn) {
             Provider.of<TransactionProvider>(context, listen: false)
                 .addTransaction(txn);
@@ -241,6 +260,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         child: ExpenseModal(
+          defaultWalletId: _currentDefaultWalletId(context),
           onSave: (txn) {
             Provider.of<TransactionProvider>(context, listen: false)
                 .addTransaction(txn);
@@ -262,6 +282,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           child: IncomeModal(
             initialTransaction: txn,
+            defaultWalletId: txn.walletId,
             onSave: (updated) {
               Provider.of<TransactionProvider>(context, listen: false)
                   .updateTransaction(updated);
@@ -280,6 +301,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           child: ExpenseModal(
             initialTransaction: txn,
+            defaultWalletId: txn.walletId,
             onSave: (updated) {
               Provider.of<TransactionProvider>(context, listen: false)
                   .updateTransaction(updated);

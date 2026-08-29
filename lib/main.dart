@@ -5,6 +5,7 @@ import 'providers/settings_provider.dart';
 import 'screens/dashboard_screen.dart';
 import 'screens/analytics_screen.dart';
 import 'screens/settings_screen.dart';
+import 'providers/wallet_provider.dart';
 
 void main() => runApp(const MyApp());
 
@@ -17,11 +18,12 @@ class MyApp extends StatelessWidget {
       providers: [
         ChangeNotifierProvider(create: (_) => TransactionProvider()),
         ChangeNotifierProvider(create: (_) => SettingsProvider()),
+        ChangeNotifierProvider(create: (_) => WalletProvider()),
       ],
       child: Consumer<SettingsProvider>(
         builder: (context, settings, child) {
           return MaterialApp(
-            title: 'Wallet Tracker',
+            title: 'Expense Tracker',
             theme: _buildTheme(settings.currentTheme, settings.isDarkMode),
             home: const MainScreen(),
             debugShowCheckedModeBanner: false,

@@ -1,12 +1,25 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:expense_tracker/utils/formatter.dart';
 import '../models/transaction.dart';
+import '../models/wallet.dart';
 import '../providers/settings_provider.dart';
+import '../providers/wallet_provider.dart';
+import '../widgets/amount_text_field.dart';
 
 class IncomeModal extends StatefulWidget {
   final Transaction? initialTransaction;
   final Function(Transaction) onSave;
-  const IncomeModal({super.key, this.initialTransaction, required this.onSave});
+  // ✅ Which wallet this should default to (e.g. whatever's selected on
+  // the dashboard). Falls back to Cash if omitted.
+  final int? defaultWalletId;
+
+  const IncomeModal({
+    super.key,
+    this.initialTransaction,
+    required this.onSave,
+    this.defaultWalletId,
+  });
 
   @override
   State<IncomeModal> createState() => _IncomeModalState();
@@ -15,12 +28,20 @@ class IncomeModal extends StatefulWidget {
 class _IncomeModalState extends State<IncomeModal> {
   final _amountController = TextEditingController();
   final _remarkController = TextEditingController();
+  late int _selectedWalletId;
 
   @override
   void initState() {
     super.initState();
+    // ✅ Editing keeps the transaction's original wallet; new transactions
+    // default to whatever wallet was passed in (falls back to Cash).
+    _selectedWalletId = widget.initialTransaction?.walletId ??
+        widget.defaultWalletId ??
+        Wallet.cashWalletId;
     if (widget.initialTransaction != null) {
-      _amountController.text = widget.initialTransaction!.amount.toString();
+      final raw = widget.initialTransaction!.amount;
+      // ✅ Format with commas on load
+      _amountController.text = formatAmount(raw);
       _remarkController.text = widget.initialTransaction!.remark ?? '';
     }
   }
@@ -30,6 +51,67 @@ class _IncomeModalState extends State<IncomeModal> {
     _amountController.dispose();
     _remarkController.dispose();
     super.dispose();
+  }
+
+  void _save() {
+    final rawAmount = parseAmount(_amountController.text);
+    if (rawAmount == null || rawAmount <= 0) return;
+    final txn = Transaction(
+      id: widget.initialTransaction?.id,
+      type: TransactionType.income,
+      amount: rawAmount,
+      remark: _remarkController.text.trim().isEmpty
+          ? null
+          : _remarkController.text.trim(),
+      date: widget.initialTransaction?.date ?? DateTime.now(),
+      walletId: _selectedWalletId,
+    );
+    widget.onSave(txn);
+    Navigator.pop(context);
+  }
+
+  Widget _buildWalletDropdown(ThemeData theme) {
+    return Consumer<WalletProvider>(
+      builder: (ctx, walletProvider, _) {
+        final wallets = walletProvider.wallets;
+        // Guard against the selected wallet having just been deleted.
+        final validId = wallets.any((w) => w.id == _selectedWalletId)
+            ? _selectedWalletId
+            : Wallet.cashWalletId;
+        return DropdownButtonFormField<int>(
+          initialValue: validId,
+          items: wallets.map((w) {
+            return DropdownMenuItem<int>(
+              value: w.id,
+              child: Text('${w.icon} ${w.name}'),
+            );
+          }).toList(),
+          onChanged: (val) => setState(() => _selectedWalletId = val!),
+          decoration: InputDecoration(
+            labelText: 'Wallet',
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: theme.colorScheme.outline),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: theme.colorScheme.outlineVariant),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(
+                color: theme.colorScheme.primary,
+                width: 2,
+              ),
+            ),
+            filled: true,
+            fillColor: theme.colorScheme.surfaceContainerHighest,
+            contentPadding:
+                const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          ),
+        );
+      },
+    );
   }
 
   @override
@@ -56,34 +138,13 @@ class _IncomeModalState extends State<IncomeModal> {
             ],
           ),
           const SizedBox(height: 16),
-          TextField(
+          AmountTextField(
             controller: _amountController,
-            decoration: InputDecoration(
-              labelText: 'Amount',
-              prefixText: '$currency ',
-              prefixStyle: const TextStyle(fontWeight: FontWeight.bold),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: theme.colorScheme.outline),
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: theme.colorScheme.outlineVariant),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(
-                  color: theme.colorScheme.primary,
-                  width: 2,
-                ),
-              ),
-              filled: true,
-              fillColor: theme.colorScheme.surfaceContainerHighest,
-              contentPadding:
-                  const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-            ),
-            keyboardType: TextInputType.number,
+            labelText: 'Amount',
+            currencySymbol: currency,
           ),
+          const SizedBox(height: 12),
+          _buildWalletDropdown(theme),
           const SizedBox(height: 12),
           TextField(
             controller: _remarkController,
@@ -114,21 +175,7 @@ class _IncomeModalState extends State<IncomeModal> {
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(
-              onPressed: () {
-                final amount = double.tryParse(_amountController.text) ?? 0;
-                if (amount <= 0) return;
-                final txn = Transaction(
-                  id: widget.initialTransaction?.id,
-                  type: TransactionType.income,
-                  amount: amount,
-                  remark: _remarkController.text.trim().isEmpty
-                      ? null
-                      : _remarkController.text.trim(),
-                  date: widget.initialTransaction?.date ?? DateTime.now(),
-                );
-                widget.onSave(txn);
-                Navigator.pop(context);
-              },
+              onPressed: _save,
               style: ElevatedButton.styleFrom(
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 shape: RoundedRectangleBorder(

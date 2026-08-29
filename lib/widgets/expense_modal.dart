@@ -1,16 +1,24 @@
+import 'package:expense_tracker/utils/formatter.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/transaction.dart';
+import '../models/wallet.dart';
 import '../providers/settings_provider.dart';
+import '../providers/wallet_provider.dart';
+import '../widgets/amount_text_field.dart';
 
 class ExpenseModal extends StatefulWidget {
   final Transaction? initialTransaction;
   final Function(Transaction) onSave;
+  // ✅ Which wallet this should default to (e.g. whatever's selected on
+  // the dashboard). Falls back to Cash if omitted.
+  final int? defaultWalletId;
 
   const ExpenseModal({
     super.key,
     this.initialTransaction,
     required this.onSave,
+    this.defaultWalletId,
   });
 
   @override
@@ -23,6 +31,7 @@ class _ExpenseModalState extends State<ExpenseModal>
   final _amountController = TextEditingController();
   final _remarkController = TextEditingController();
   Category _selectedCategory = Category.others;
+  late int _selectedWalletId;
 
   final _cashGivenController = TextEditingController();
   final _cashReceivedController = TextEditingController();
@@ -31,8 +40,19 @@ class _ExpenseModalState extends State<ExpenseModal>
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
+    // ✅ AmountTextField doesn't expose onChanged, so listen on the
+    // controllers directly to keep the computed amount live.
+    _cashGivenController.addListener(_calculateFromChange);
+    _cashReceivedController.addListener(_calculateFromChange);
+    // ✅ Editing keeps the transaction's original wallet; new transactions
+    // default to whatever wallet was passed in (falls back to Cash).
+    _selectedWalletId = widget.initialTransaction?.walletId ??
+        widget.defaultWalletId ??
+        Wallet.cashWalletId;
     if (widget.initialTransaction != null) {
-      _amountController.text = widget.initialTransaction!.amount.toString();
+      final raw = widget.initialTransaction!.amount;
+      // ✅ Format with commas on load
+      _amountController.text = formatAmount(raw);
       _remarkController.text = widget.initialTransaction!.remark ?? '';
       _selectedCategory =
           widget.initialTransaction!.category ?? Category.others;
@@ -41,6 +61,8 @@ class _ExpenseModalState extends State<ExpenseModal>
 
   @override
   void dispose() {
+    _cashGivenController.removeListener(_calculateFromChange);
+    _cashReceivedController.removeListener(_calculateFromChange);
     _tabController.dispose();
     _amountController.dispose();
     _remarkController.dispose();
@@ -49,30 +71,77 @@ class _ExpenseModalState extends State<ExpenseModal>
     super.dispose();
   }
 
-  // ✅ Auto‑update computed amount
   void _calculateFromChange() {
-    final given = double.tryParse(_cashGivenController.text) ?? 0;
-    final received = double.tryParse(_cashReceivedController.text) ?? 0;
+    // ✅ Use parseAmount so commas from the AmountTextField formatting
+    // don't break the parse (double.tryParse chokes on "6,464,646").
+    final given = parseAmount(_cashGivenController.text) ?? 0;
+    final received = parseAmount(_cashReceivedController.text) ?? 0;
     final spent = given - received;
-    _amountController.text = spent > 0 ? spent.toStringAsFixed(2) : '0.00';
-    setState(() {}); // rebuild to show updated value
+    _amountController.text = spent > 0 ? formatAmount(spent) : '0.00';
+    setState(() {});
   }
 
   void _save() {
-    final amount = double.tryParse(_amountController.text) ?? 0;
-    if (amount <= 0) return;
+    // ✅ Use parseAmount directly
+    final rawAmount = parseAmount(_amountController.text);
+    if (rawAmount == null || rawAmount <= 0) return;
     final txn = Transaction(
       id: widget.initialTransaction?.id,
       type: TransactionType.expense,
-      amount: amount,
+      amount: rawAmount,
       category: _selectedCategory,
       remark: _remarkController.text.trim().isEmpty
           ? null
           : _remarkController.text.trim(),
       date: widget.initialTransaction?.date ?? DateTime.now(),
+      walletId: _selectedWalletId,
     );
     widget.onSave(txn);
     Navigator.pop(context);
+  }
+
+  Widget _buildWalletDropdown(ThemeData theme) {
+    return Consumer<WalletProvider>(
+      builder: (ctx, walletProvider, _) {
+        final wallets = walletProvider.wallets;
+        // Guard against the selected wallet having just been deleted.
+        final validId = wallets.any((w) => w.id == _selectedWalletId)
+            ? _selectedWalletId
+            : Wallet.cashWalletId;
+        return DropdownButtonFormField<int>(
+          initialValue: validId,
+          items: wallets.map((w) {
+            return DropdownMenuItem<int>(
+              value: w.id,
+              child: Text('${w.icon} ${w.name}'),
+            );
+          }).toList(),
+          onChanged: (val) => setState(() => _selectedWalletId = val!),
+          decoration: InputDecoration(
+            labelText: 'Wallet',
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: theme.colorScheme.outline),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: theme.colorScheme.outlineVariant),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(
+                color: theme.colorScheme.primary,
+                width: 2,
+              ),
+            ),
+            filled: true,
+            fillColor: theme.colorScheme.surfaceContainerHighest,
+            contentPadding:
+                const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          ),
+        );
+      },
+    );
   }
 
   @override
@@ -121,7 +190,7 @@ class _ExpenseModalState extends State<ExpenseModal>
             ),
             const SizedBox(height: 16),
             SizedBox(
-              height: 320,
+              height: 420, // was 320
               child: TabBarView(
                 controller: _tabController,
                 children: [
@@ -158,34 +227,13 @@ class _ExpenseModalState extends State<ExpenseModal>
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        TextField(
+        AmountTextField(
           controller: _amountController,
-          decoration: InputDecoration(
-            labelText: 'Amount',
-            prefixText: '$currency ',
-            prefixStyle: const TextStyle(fontWeight: FontWeight.bold),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: theme.colorScheme.outline),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: theme.colorScheme.outlineVariant),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(
-                color: theme.colorScheme.primary,
-                width: 2,
-              ),
-            ),
-            filled: true,
-            fillColor: theme.colorScheme.surfaceContainerHighest,
-            contentPadding:
-                const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-          ),
-          keyboardType: TextInputType.number,
+          labelText: 'Amount',
+          currencySymbol: currency,
         ),
+        const SizedBox(height: 12),
+        _buildWalletDropdown(theme),
         const SizedBox(height: 12),
         _buildCategoryDropdown(theme),
         const SizedBox(height: 12),
@@ -219,63 +267,22 @@ class _ExpenseModalState extends State<ExpenseModal>
   }
 
   Widget _buildCalculatorTab(String currency, ThemeData theme) {
+    final computedValue = parseAmount(_amountController.text) ?? 0.0;
+    final formattedComputed = formatAmount(computedValue);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        TextField(
+        AmountTextField(
           controller: _cashGivenController,
-          decoration: InputDecoration(
-            labelText: 'Cash given',
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: theme.colorScheme.outline),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: theme.colorScheme.outlineVariant),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(
-                color: theme.colorScheme.primary,
-                width: 2,
-              ),
-            ),
-            filled: true,
-            fillColor: theme.colorScheme.surfaceContainerHighest,
-            contentPadding:
-                const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-          ),
-          keyboardType: TextInputType.number,
-          onChanged: (_) => _calculateFromChange(),
+          labelText: 'Cash given',
+          currencySymbol: currency,
         ),
         const SizedBox(height: 10),
-        TextField(
+        AmountTextField(
           controller: _cashReceivedController,
-          decoration: InputDecoration(
-            labelText: 'Cash received back',
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: theme.colorScheme.outline),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: theme.colorScheme.outlineVariant),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(
-                color: theme.colorScheme.primary,
-                width: 2,
-              ),
-            ),
-            filled: true,
-            fillColor: theme.colorScheme.surfaceContainerHighest,
-            contentPadding:
-                const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-          ),
-          keyboardType: TextInputType.number,
-          onChanged: (_) => _calculateFromChange(),
+          labelText: 'Cash received back',
+          currencySymbol: currency,
         ),
         const SizedBox(height: 12),
         Container(
@@ -298,7 +305,7 @@ class _ExpenseModalState extends State<ExpenseModal>
                 ),
               ),
               Text(
-                '$currency${_amountController.text.isEmpty ? '0.00' : _amountController.text}',
+                '$currency$formattedComputed',
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
@@ -308,6 +315,8 @@ class _ExpenseModalState extends State<ExpenseModal>
             ],
           ),
         ),
+        const SizedBox(height: 12),
+        _buildWalletDropdown(theme),
         const SizedBox(height: 12),
         _buildCategoryDropdown(theme),
         const SizedBox(height: 12),

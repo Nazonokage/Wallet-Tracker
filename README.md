@@ -1,4 +1,4 @@
-# Wallet Tracker
+# Expense Tracker
 
 A simple, offline-first personal expense tracker built with Flutter.
 
@@ -75,8 +75,8 @@ Two modes:
 ### Run the app
 
 ```bash
-git clone https://github.com/Nazonokage/Wallet-Tracker.git
-cd Wallet-Tracker
+git clone https://github.com/Nazonokage/Expense-Tracker.git
+cd Expense-Tracker
 flutter pub get
 flutter run
 ```
@@ -107,9 +107,9 @@ lib/
 
 **Explicitly out of scope for MVP:**
 - Cloud sync / accounts
-- Multiple wallets
+- Multiple Expenses
 - Custom categories
-- Budgets / spending limits
+- Expenses / spending limits
 - Recurring transactions
 
 ---

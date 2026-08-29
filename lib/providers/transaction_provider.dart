@@ -22,6 +22,14 @@ class TransactionProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  // ✅ Optional wallet filter — null means "All wallets".
+  int? _walletFilter;
+  int? get walletFilter => _walletFilter;
+  set walletFilter(int? val) {
+    _walletFilter = val;
+    notifyListeners();
+  }
+
   TransactionProvider() {
     loadTransactions();
   }
@@ -32,8 +40,15 @@ class TransactionProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  // ✅ All the computed getters below operate on this wallet-scoped list,
+  // so switching the wallet selector updates balance/income/expense too.
+  List<Transaction> get _walletScoped {
+    if (_walletFilter == null) return _transactions;
+    return _transactions.where((t) => t.walletId == _walletFilter).toList();
+  }
+
   List<Transaction> get filteredTransactions {
-    return _transactions.where((txn) {
+    return _walletScoped.where((txn) {
       // category filter
       if (_categoryFilter != null && txn.category != _categoryFilter) {
         return false;
@@ -69,6 +84,15 @@ class TransactionProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  // ✅ Called after a wallet gets deleted (its transactions are already
+  // gone from the DB via DatabaseHelper.deleteWallet) so the in-memory
+  // list matches — otherwise deleted-wallet transactions would linger
+  // until the next app restart.
+  void removeTransactionsForWallet(int walletId) {
+    _transactions.removeWhere((t) => t.walletId == walletId);
+    notifyListeners();
+  }
+
   // For undo: we can keep a soft-deleted transaction in memory
   Transaction? _lastDeleted;
   Transaction? get lastDeleted => _lastDeleted;
@@ -92,10 +116,10 @@ class TransactionProvider extends ChangeNotifier {
     }
   }
 
-  // Computed values
+  // Computed values (wallet-scoped)
   double get totalBalance {
     double income = 0, expense = 0;
-    for (var txn in _transactions) {
+    for (var txn in _walletScoped) {
       if (txn.type == TransactionType.income) {
         income += txn.amount;
       } else {
@@ -105,19 +129,19 @@ class TransactionProvider extends ChangeNotifier {
     return income - expense;
   }
 
-  double get totalIncome => _transactions
+  double get totalIncome => _walletScoped
       .where((t) => t.type == TransactionType.income)
       .fold(0, (sum, t) => sum + t.amount);
 
-  double get totalExpense => _transactions
+  double get totalExpense => _walletScoped
       .where((t) => t.type == TransactionType.expense)
       .fold(0, (sum, t) => sum + t.amount);
 
-  // Weekly summary (current calendar week)
+  // Weekly summary (current calendar week), wallet-scoped
   double get weeklyIncome {
     final now = DateTime.now();
     final startOfWeek = now.subtract(Duration(days: now.weekday - 1));
-    return _transactions
+    return _walletScoped
         .where(
           (t) =>
               t.type == TransactionType.income &&
@@ -130,7 +154,7 @@ class TransactionProvider extends ChangeNotifier {
   double get weeklyExpense {
     final now = DateTime.now();
     final startOfWeek = now.subtract(Duration(days: now.weekday - 1));
-    return _transactions
+    return _walletScoped
         .where(
           (t) =>
               t.type == TransactionType.expense &&
