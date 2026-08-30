@@ -1,13 +1,12 @@
-import 'dart:io';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
-import 'package:csv/csv.dart';
-import 'package:expense_tracker/models/transaction.dart' show TransactionType;
 import '../providers/settings_provider.dart' show SettingsProvider, AppTheme;
 import '../providers/transaction_provider.dart';
+import '../providers/wallet_provider.dart';
 import '../db/database_helper.dart';
+import '../utils/import_export_helper.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -74,18 +73,27 @@ class SettingsScreen extends StatelessWidget {
             onTap: () => _confirmClearData(context),
           ),
 
-          // ✅ Export CSV – now fully functional
+          // Export
           ListTile(
-            title: const Text('Export CSV'),
+            title: const Text('Export Data'),
+            subtitle: const Text('CSV or Excel (.xlsx)'),
             trailing: const Icon(Icons.upload_file),
-            onTap: () => _exportCSV(context),
+            onTap: () => _showExportOptions(context),
+          ),
+
+          // Import
+          ListTile(
+            title: const Text('Import Data'),
+            subtitle: const Text('CSV or Excel (.xlsx)'),
+            trailing: const Icon(Icons.download),
+            onTap: () => _importData(context),
           ),
         ],
       ),
     );
   }
 
-  // --------------------- Clear Data (unchanged) ---------------------
+  // --------------------- Clear Data ---------------------
   void _confirmClearData(BuildContext context) {
     showDialog(
       context: context,
@@ -139,11 +147,54 @@ class SettingsScreen extends StatelessWidget {
     );
   }
 
-  // --------------------- CSV Export ---------------------
-  Future<void> _exportCSV(BuildContext context) async {
-    final provider = Provider.of<TransactionProvider>(context, listen: false);
-    final transactions = provider.transactions;
+  // --------------------- Export Options ---------------------
+  void _showExportOptions(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      builder: (ctx) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Padding(
+                padding: EdgeInsets.all(16),
+                child: Text(
+                  'Export format',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+              ),
+              ListTile(
+                leading: const Icon(Icons.table_chart),
+                title: const Text('CSV'),
+                subtitle: const Text('Best for Google Sheets / Excel'),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  _export(context, 'csv');
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.grid_on),
+                title: const Text('Excel (.xlsx)'),
+                subtitle: const Text('Native Excel format'),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  _export(context, 'xlsx');
+                },
+              ),
+              const SizedBox(height: 8),
+            ],
+          ),
+        );
+      },
+    );
+  }
 
+  Future<void> _export(BuildContext context, String format) async {
+    final txnProvider =
+        Provider.of<TransactionProvider>(context, listen: false);
+    final walletProvider = Provider.of<WalletProvider>(context, listen: false);
+
+    final transactions = txnProvider.transactions;
     if (transactions.isEmpty) {
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -153,52 +204,42 @@ class SettingsScreen extends StatelessWidget {
     }
 
     try {
-      // 1. Build CSV content
-      final List<List<dynamic>> rows = [
-        ['Date', 'Type', 'Category', 'Amount', 'Remark']
-      ];
-      for (var txn in transactions) {
-        rows.add([
-          txn.date.toIso8601String(),
-          txn.type == TransactionType.income ? 'Income' : 'Expense',
-          txn.category?.toString().split('.').last ?? '',
-          txn.amount,
-          txn.remark ?? '',
-        ]);
-      }
-      final csvString = const ListToCsvConverter().convert(rows);
-
-      // 2. Ask user where to save
-      String? selectedDirectory = await FilePicker.platform.getDirectoryPath(
-        dialogTitle: 'Choose folder to save CSV',
+      // Ask user where to save
+      final selectedDirectory = await FilePicker.platform.getDirectoryPath(
+        dialogTitle: 'Choose folder to save export',
       );
 
-      if (selectedDirectory == null) {
-        // User canceled – do nothing
+      if (selectedDirectory == null) return; // cancelled
+
+      final filePath = await ImportExportHelper.export(
+        transactions: transactions,
+        wallets: walletProvider.wallets,
+        format: format,
+        directoryPath: selectedDirectory,
+      );
+
+      if (filePath == null) {
+        if (!context.mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Export failed')),
+        );
         return;
       }
-
-      // 3. Write the file to the chosen folder
-      final fileName =
-          'transactions_${DateTime.now().millisecondsSinceEpoch}.csv';
-      final filePath = '$selectedDirectory/$fileName';
-      final file = File(filePath);
-      await file.writeAsString(csvString);
 
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('CSV saved to: $filePath'),
+          content: Text('Saved to: $filePath'),
           duration: const Duration(seconds: 4),
         ),
       );
 
-      // 4. Optionally, offer to share the file via share_plus
+      // Optional share
       final shouldShare = await showDialog<bool>(
         context: context,
         builder: (_) => AlertDialog(
           title: const Text('Share file?'),
-          content: const Text('Do you want to share the CSV file as well?'),
+          content: const Text('Do you also want to share the exported file?'),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context, false),
@@ -223,6 +264,110 @@ class SettingsScreen extends StatelessWidget {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Export failed: $e')),
       );
+    }
+  }
+
+  // --------------------- Import ---------------------
+  Future<void> _importData(BuildContext context) async {
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['csv', 'xlsx', 'xls'],
+        dialogTitle: 'Select CSV or Excel file to import',
+      );
+
+      if (result == null || result.files.isEmpty) return;
+
+      final platformFile = result.files.single;
+      String? path = platformFile.path;
+
+      // On some platforms we only get bytes
+      if (path == null && platformFile.bytes != null) {
+        final ext = platformFile.extension ?? 'csv';
+        path = await ImportExportHelper.writeTempFile(
+          platformFile.bytes!,
+          ext,
+        );
+      }
+
+      if (path == null) {
+        if (!context.mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Could not read the selected file')),
+        );
+        return;
+      }
+
+      // Confirm before importing
+      if (!context.mounted) return;
+      final shouldImport = await showDialog<bool>(
+        context: context,
+        builder: (_) => AlertDialog(
+          title: const Text('Import data?'),
+          content: const Text(
+            'This will ADD the transactions from the file to your existing data.\n\n'
+            'Existing transactions will NOT be deleted.\n'
+            'Duplicate rows may appear if you import the same file twice.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text('Import'),
+            ),
+          ],
+        ),
+      );
+
+      if (shouldImport != true) return;
+      if (!context.mounted) return;
+
+      // Show loading
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (_) => const Center(child: CircularProgressIndicator()),
+      );
+
+      try {
+        final parsed = await ImportExportHelper.parseImportFile(path);
+
+        if (!context.mounted) return;
+        final txnProvider =
+            Provider.of<TransactionProvider>(context, listen: false);
+
+        int imported = 0;
+        for (final txn in parsed) {
+          await txnProvider.addTransaction(txn);
+          imported++;
+        }
+
+        if (!context.mounted) return;
+        Navigator.pop(context); // close loading dialog
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Successfully imported $imported transactions'),
+            duration: const Duration(seconds: 4),
+          ),
+        );
+      } catch (e) {
+        if (context.mounted) {
+          Navigator.pop(context); // close loading dialog
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Import failed: $e')),
+          );
+        }
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Import failed: $e')),
+        );
+      }
     }
   }
 }

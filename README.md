@@ -19,7 +19,7 @@ No accounts. No cloud. No ads. Just fast entry and clear visibility into where y
 - **Swipe left** → Edit
 - **Swipe right** → Delete (with undo)
 - Floating **+** (Income) and **−** (Expense) buttons placed in the natural thumb zone
-- Category filter
+- Category + wallet filters
 
 ### Income Entry
 - Amount (required)
@@ -47,9 +47,29 @@ Two modes:
 
 ### Settings
 - **Clear all data** (double confirmation)
-- **Export to CSV**
-- Theme selection: **Mint**, **Sunset**, **Ocean**
-- (Reminders planned)
+- **Export** → CSV or Excel (.xlsx)
+- **Import** → CSV or Excel (.xlsx)  ← recover data after reinstalls / renames
+- Theme selection + Dark mode
+- Currency symbol selector
+
+---
+
+## Export / Import format
+
+Both CSV and XLSX use the same columns:
+
+```
+Date, Type, Category, Amount, Remark, Wallet
+```
+
+- **Date**: ISO-8601 (`2025-08-30T14:22:00.000`)
+- **Type**: `Income` or `Expense`
+- **Category**: `food`, `commute`, `bills`, `shopping`, `others` (ignored for income)
+- **Amount**: number
+- **Remark**: free text (optional)
+- **Wallet**: wallet name (defaults to `Cash` if missing)
+
+You can open the exported file in Google Sheets / Excel, edit it, and re-import it later.
 
 ---
 
@@ -62,7 +82,8 @@ Two modes:
 | State management | Provider            | Simple & sufficient            |
 | Charts           | fl_chart            | Lightweight pie charts         |
 | Preferences      | shared_preferences  | Theme & settings               |
-| CSV              | csv                 | Export                         |
+| CSV              | csv                 | Export / Import                |
+| Excel            | excel               | Native .xlsx Export / Import   |
 
 ---
 
@@ -75,8 +96,8 @@ Two modes:
 ### Run the app
 
 ```bash
-git clone https://github.com/Nazonokage/Expense-Tracker.git
-cd Expense-Tracker
+git clone https://github.com/Nazonokage/Wallet-Tracker.git
+cd Wallet-Tracker
 flutter pub get
 flutter run
 ```
@@ -88,12 +109,28 @@ flutter run
 ```
 lib/
 ├── db/                 # SQLite database layer
-├── models/             # Transaction model
-├── providers/          # TransactionProvider & SettingsProvider
+├── models/             # Transaction + Wallet models
+├── providers/          # TransactionProvider, WalletProvider, SettingsProvider
 ├── screens/            # Dashboard, Analytics, Settings
+├── utils/              # ImportExportHelper (CSV + XLSX)
 ├── widgets/            # Reusable UI components
 └── main.dart
 ```
+
+---
+
+## Recovering data after the rename
+
+If you previously used the app under the old package name and the database file was lost:
+
+1. If you still have an old CSV export → use **Settings → Import Data**
+2. If you only have the old APK installed on a device, you can try pulling the old SQLite file:
+   ```bash
+   adb shell "run-as <old.package.name> cat databases/wallet_tracker.db" > old.db
+   ```
+   (Then convert it manually or ask for help.)
+
+The new import feature is the recommended long-term recovery path.
 
 ---
 
@@ -101,15 +138,13 @@ lib/
 
 - [ ] Daily expense reminders (local notifications)
 - [ ] Date range filters on Dashboard
-- [ ] Currency symbol selector
-- [ ] Light / Dark mode toggle per theme
 - [ ] Better empty states & haptic feedback polish
 
 **Explicitly out of scope for MVP:**
 - Cloud sync / accounts
-- Multiple Expenses
+- Multiple accounts beyond the simple wallet system
 - Custom categories
-- Expenses / spending limits
+- Budgets / spending limits
 - Recurring transactions
 
 ---
