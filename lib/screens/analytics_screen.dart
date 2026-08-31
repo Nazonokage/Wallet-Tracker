@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:expense_tracker/l10n/app_localizations.dart';
 import '../providers/transaction_provider.dart';
 import '../providers/settings_provider.dart';
 import '../models/transaction.dart';
@@ -8,10 +9,26 @@ import '../models/transaction.dart';
 class AnalyticsScreen extends StatelessWidget {
   const AnalyticsScreen({super.key});
 
+  String _categoryLabel(Category category, AppLocalizations l10n) {
+    switch (category) {
+      case Category.food:
+        return l10n.food;
+      case Category.commute:
+        return l10n.commute;
+      case Category.bills:
+        return l10n.bills;
+      case Category.shopping:
+        return l10n.shopping;
+      case Category.others:
+        return l10n.others;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final currency = Provider.of<SettingsProvider>(context).currencySymbol;
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
 
     return SafeArea(
       child: Consumer<TransactionProvider>(
@@ -28,7 +45,6 @@ class AnalyticsScreen extends StatelessWidget {
           }
           final totalExpense = categoryTotals.values.fold(0.0, (a, b) => a + b);
 
-          // Empty state – centered
           if (totalExpense == 0) {
             return Center(
               child: Column(
@@ -37,14 +53,14 @@ class AnalyticsScreen extends StatelessWidget {
                   const Text('📊', style: TextStyle(fontSize: 64)),
                   const SizedBox(height: 16),
                   Text(
-                    'No expenses yet',
+                    l10n.noExpensesYet,
                     style: theme.textTheme.titleLarge?.copyWith(
                       fontWeight: FontWeight.w600,
                     ),
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'Add some expenses to see analytics',
+                    l10n.addExpensesForAnalytics,
                     style: theme.textTheme.bodyMedium?.copyWith(
                       color: theme.colorScheme.onSurfaceVariant,
                     ),
@@ -54,7 +70,6 @@ class AnalyticsScreen extends StatelessWidget {
             );
           }
 
-          // Color palette – "Others" gets grey
           final colors = [
             Colors.orange.shade400,
             Colors.blue.shade400,
@@ -79,7 +94,6 @@ class AnalyticsScreen extends StatelessWidget {
                   fontWeight: FontWeight.bold,
                   color: Colors.white,
                 ),
-                // ✅ removed badgePosition – it doesn't exist
               ),
             );
             index++;
@@ -89,14 +103,13 @@ class AnalyticsScreen extends StatelessWidget {
             padding: const EdgeInsets.all(20),
             child: Column(
               children: [
-                // Header with emoji
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     const Text('📈', style: TextStyle(fontSize: 28)),
                     const SizedBox(width: 12),
                     Text(
-                      'Spending Breakdown',
+                      l10n.spendingByCategory,
                       style: theme.textTheme.headlineSmall?.copyWith(
                         fontWeight: FontWeight.bold,
                       ),
@@ -112,14 +125,12 @@ class AnalyticsScreen extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 20),
-
-                // Pie chart – centered with proper constraints
                 Container(
                   height: 280,
                   width: 280,
                   decoration: BoxDecoration(
                     color: theme.colorScheme.surfaceContainerHighest
-                        .withValues(alpha: 0.3), // ✅ fixed deprecation
+                        .withValues(alpha: 0.3),
                     shape: BoxShape.circle,
                   ),
                   child: Padding(
@@ -137,13 +148,11 @@ class AnalyticsScreen extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 24),
-
-                // Legend list with better styling
                 Expanded(
                   child: Container(
                     decoration: BoxDecoration(
                       color: theme.colorScheme.surfaceContainerHighest
-                          .withValues(alpha: 0.4), // ✅ fixed deprecation
+                          .withValues(alpha: 0.4),
                       borderRadius: BorderRadius.circular(16),
                     ),
                     child: ListView.builder(
@@ -164,8 +173,7 @@ class AnalyticsScreen extends StatelessWidget {
                               borderRadius: BorderRadius.circular(12),
                               boxShadow: [
                                 BoxShadow(
-                                  color: Colors.black.withValues(
-                                      alpha: 0.04), // ✅ fixed deprecation
+                                  color: Colors.black.withValues(alpha: 0.04),
                                   blurRadius: 4,
                                   offset: const Offset(0, 2),
                                 ),
@@ -181,7 +189,7 @@ class AnalyticsScreen extends StatelessWidget {
                                 ),
                               ),
                               title: Text(
-                                '${_categoryEmoji(category)} ${category.toString().split('.').last}',
+                                '${_categoryEmoji(category)} ${_categoryLabel(category, l10n)}',
                                 style: const TextStyle(
                                     fontWeight: FontWeight.w500),
                               ),

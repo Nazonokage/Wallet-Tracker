@@ -2,6 +2,7 @@ import 'package:expense_tracker/utils/formatter.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:expense_tracker/providers/settings_provider.dart';
+import 'package:expense_tracker/l10n/app_localizations.dart';
 import '../providers/transaction_provider.dart';
 import '../providers/wallet_provider.dart';
 import '../models/transaction.dart';
@@ -21,6 +22,7 @@ class DashboardScreen extends StatefulWidget {
 class _DashboardScreenState extends State<DashboardScreen> {
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Scaffold(
       body: SafeArea(
         child: Column(
@@ -32,10 +34,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               child: TextField(
-                decoration: const InputDecoration(
-                  hintText: 'Search by remark...',
-                  prefixIcon: Icon(Icons.search),
-                  border: OutlineInputBorder(
+                decoration: InputDecoration(
+                  hintText: l10n.searchByRemark,
+                  prefixIcon: const Icon(Icons.search),
+                  border: const OutlineInputBorder(
                     borderRadius: BorderRadius.all(Radius.circular(30)),
                   ),
                 ),
@@ -50,9 +52,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 builder: (ctx, provider, _) {
                   final list = provider.filteredTransactions;
                   if (list.isEmpty) {
-                    return const Center(
-                      child: Text(
-                          '📭 No transactions yet — tap + or − to add one'),
+                    return Center(
+                      child: Text(l10n.noTransactionsYet),
                     );
                   }
                   return ListView.builder(
@@ -64,19 +65,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         direction: DismissDirection.horizontal,
                         confirmDismiss: (direction) async {
                           if (direction == DismissDirection.endToStart) {
-                            // Swipe from right → left = DELETE (orange bar,
-                            // shown via `secondaryBackground` below).
                             final confirm = await showDialog<bool>(
                               context: context,
                               builder: (_) => AlertDialog(
-                                title: const Text('Delete Transaction?'),
-                                content:
-                                    const Text('This action cannot be undone.'),
+                                title: Text(l10n.deleteTransaction),
+                                content: Text(l10n.deleteTransactionBody),
                                 actions: [
                                   TextButton(
                                     onPressed: () =>
                                         Navigator.pop(context, false),
-                                    child: const Text('Cancel'),
+                                    child: Text(l10n.cancel),
                                   ),
                                   TextButton(
                                     onPressed: () =>
@@ -84,7 +82,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                     style: TextButton.styleFrom(
                                       foregroundColor: Colors.red,
                                     ),
-                                    child: const Text('Delete'),
+                                    child: Text(l10n.delete),
                                   ),
                                 ],
                               ),
@@ -93,20 +91,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
                               provider.softDelete(txn.id!);
                               if (!context.mounted) return true;
                               _showUndoSnackBar(context);
-                              return true; // remove the item
+                              return true;
                             } else {
-                              return false; // keep it
+                              return false;
                             }
                           } else {
-                            // Swipe from left → right = EDIT (green bar,
-                            // shown via `background` below).
                             WidgetsBinding.instance.addPostFrameCallback((_) {
                               if (mounted) _openEditModal(context, txn);
                             });
-                            return false; // do NOT remove the item
+                            return false;
                           }
                         },
-                        // ─── LEFT‑TO‑RIGHT SWIPE (Edit) ────────────────────────
                         background: Container(
                           color: Colors.green,
                           alignment: Alignment.centerLeft,
@@ -127,24 +122,23 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             ],
                           ),
                         ),
-                        // ─── RIGHT‑TO‑LEFT SWIPE (Delete) ──────────────────────
                         secondaryBackground: Container(
                           color: Colors.orange,
                           alignment: Alignment.centerRight,
                           padding: const EdgeInsets.only(right: 24),
-                          child: const Row(
+                          child: Row(
                             mainAxisAlignment: MainAxisAlignment.end,
                             children: [
                               Text(
-                                'Delete',
-                                style: TextStyle(
+                                l10n.delete,
+                                style: const TextStyle(
                                   color: Colors.white,
                                   fontSize: 18,
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),
-                              SizedBox(width: 8),
-                              Icon(Icons.delete, color: Colors.white),
+                              const SizedBox(width: 8),
+                              const Icon(Icons.delete, color: Colors.white),
                             ],
                           ),
                         ),
@@ -181,11 +175,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  // ✅ Balance now factors in the selected wallet's starting balance (or the
-  // combined starting balance of every wallet, for the "All" view), plus
-  // that wallet's own income/expense — TransactionProvider is already
-  // scoped to the selected wallet via `walletFilter`.
   Widget _buildBalanceCard(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Consumer2<TransactionProvider, WalletProvider>(
       builder: (ctx, txnProvider, walletProvider, _) {
         final selectedWallet = walletProvider.selectedWallet;
@@ -198,8 +189,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
         final settings = Provider.of<SettingsProvider>(context);
         final currency = settings.currencySymbol;
         final label = selectedWallet != null
-            ? '${selectedWallet.icon} ${selectedWallet.name} Balance'
-            : 'Balance (All wallets)';
+            ? '${selectedWallet.icon} ${selectedWallet.name} ${l10n.balance}'
+            : l10n.balanceAllWallets;
         return Card(
           margin: const EdgeInsets.symmetric(horizontal: 16),
           child: Padding(
@@ -214,7 +205,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'This week: +$currency${formatAmount(weekIncome)} / −$currency${formatAmount(weekExpense)}',
+                  l10n.thisWeek(
+                    currency,
+                    formatAmount(weekIncome),
+                    formatAmount(weekExpense),
+                  ),
                   style: const TextStyle(fontSize: 16),
                 ),
               ],
@@ -225,9 +220,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  // ✅ New transactions default to whichever wallet is currently selected
-  // in the switcher. If "All" is selected, they default to Cash — the user
-  // can still change wallet inside the modal's dropdown.
   int _currentDefaultWalletId(BuildContext context) {
     return Provider.of<WalletProvider>(context, listen: false)
             .selectedWalletId ??
@@ -313,10 +305,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   void _showUndoSnackBar(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final snackBar = SnackBar(
-      content: const Text('Transaction deleted'),
+      content: Text(l10n.transactionDeleted),
       action: SnackBarAction(
-        label: 'UNDO',
+        label: l10n.undo,
         onPressed: () {
           final provider =
               Provider.of<TransactionProvider>(context, listen: false);

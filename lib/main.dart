@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:expense_tracker/l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
 import 'providers/transaction_provider.dart';
 import 'providers/settings_provider.dart';
@@ -23,8 +25,16 @@ class MyApp extends StatelessWidget {
       child: Consumer<SettingsProvider>(
         builder: (context, settings, child) {
           return MaterialApp(
-            title: 'Expense Tracker',
+            title: 'Wallet Tracker',
             theme: _buildTheme(settings.currentTheme, settings.isDarkMode),
+            locale: settings.locale,
+            supportedLocales: SettingsProvider.supportedLocales,
+            localizationsDelegates: const [
+              AppLocalizations.delegate,
+              GlobalMaterialLocalizations.delegate,
+              GlobalWidgetsLocalizations.delegate,
+              GlobalCupertinoLocalizations.delegate,
+            ],
             home: const MainScreen(),
             debugShowCheckedModeBanner: false,
           );
@@ -34,7 +44,6 @@ class MyApp extends StatelessWidget {
   }
 
   ThemeData _buildTheme(AppTheme theme, bool isDark) {
-    // base seed color for each theme
     Color seed;
     switch (theme) {
       case AppTheme.mint:
@@ -47,10 +56,10 @@ class MyApp extends StatelessWidget {
         seed = Colors.blue;
         break;
       case AppTheme.lavender:
-        seed = const Color(0xFF9C7B9E); // soft purple
+        seed = const Color(0xFF9C7B9E);
         break;
       case AppTheme.rose:
-        seed = const Color(0xFFE8A2A2); // soft pink
+        seed = const Color(0xFFE8A2A2);
         break;
     }
 
@@ -63,7 +72,6 @@ class MyApp extends StatelessWidget {
     return ThemeData(
       colorScheme: colorScheme,
       useMaterial3: true,
-      // optional: override card colors, etc.
       cardTheme: CardThemeData(
         color: colorScheme.surface,
         elevation: 2,
@@ -72,8 +80,6 @@ class MyApp extends StatelessWidget {
     );
   }
 }
-
-// ... rest of MainScreen unchanged
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -93,15 +99,23 @@ class _MainScreenState extends State<MainScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Scaffold(
       body: _screens[_selectedIndex],
       bottomNavigationBar: BottomNavigationBar(
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Dashboard'),
+        items: [
           BottomNavigationBarItem(
-              icon: Icon(Icons.pie_chart), label: 'Analytics'),
+            icon: const Icon(Icons.home),
+            label: l10n.dashboard,
+          ),
           BottomNavigationBarItem(
-              icon: Icon(Icons.settings), label: 'Settings'),
+            icon: const Icon(Icons.pie_chart),
+            label: l10n.analytics,
+          ),
+          BottomNavigationBarItem(
+            icon: const Icon(Icons.settings),
+            label: l10n.settings,
+          ),
         ],
         currentIndex: _selectedIndex,
         onTap: (index) => setState(() => _selectedIndex = index),

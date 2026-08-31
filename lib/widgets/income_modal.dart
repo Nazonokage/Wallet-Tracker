@@ -6,6 +6,7 @@ import '../models/wallet.dart';
 import '../providers/settings_provider.dart';
 import '../providers/wallet_provider.dart';
 import '../widgets/amount_text_field.dart';
+import 'package:expense_tracker/l10n/app_localizations.dart';
 
 class IncomeModal extends StatefulWidget {
   final Transaction? initialTransaction;
@@ -88,7 +89,7 @@ class _IncomeModalState extends State<IncomeModal> {
           }).toList(),
           onChanged: (val) => setState(() => _selectedWalletId = val!),
           decoration: InputDecoration(
-            labelText: 'Wallet',
+            labelText: AppLocalizations.of(context).wallet,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
               borderSide: BorderSide(color: theme.colorScheme.outline),
@@ -130,8 +131,8 @@ class _IncomeModalState extends State<IncomeModal> {
               const SizedBox(width: 8),
               Text(
                 widget.initialTransaction == null
-                    ? 'Add Income'
-                    : 'Edit Income',
+                    ? AppLocalizations.of(context).addIncome
+                    : AppLocalizations.of(context).editIncome,
                 style: theme.textTheme.titleLarge
                     ?.copyWith(fontWeight: FontWeight.bold),
               ),
@@ -140,7 +141,7 @@ class _IncomeModalState extends State<IncomeModal> {
           const SizedBox(height: 16),
           AmountTextField(
             controller: _amountController,
-            labelText: 'Amount',
+            labelText: AppLocalizations.of(context).amount,
             currencySymbol: currency,
           ),
           const SizedBox(height: 12),
@@ -149,7 +150,7 @@ class _IncomeModalState extends State<IncomeModal> {
           TextField(
             controller: _remarkController,
             decoration: InputDecoration(
-              labelText: 'Remark (optional)',
+              labelText: AppLocalizations.of(context).remarkOptional,
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
                 borderSide: BorderSide(color: theme.colorScheme.outline),
@@ -182,9 +183,10 @@ class _IncomeModalState extends State<IncomeModal> {
                   borderRadius: BorderRadius.circular(14),
                 ),
               ),
-              child: const Text(
-                'Save',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+              child: Text(
+                AppLocalizations.of(context).save,
+                style:
+                    const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
               ),
             ),
           ),

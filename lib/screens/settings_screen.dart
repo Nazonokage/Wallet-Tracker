@@ -2,11 +2,13 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
-import '../providers/settings_provider.dart' show SettingsProvider, AppTheme;
+import '../providers/settings_provider.dart'
+    show SettingsProvider, AppTheme, RegionPreset;
 import '../providers/transaction_provider.dart';
 import '../providers/wallet_provider.dart';
 import '../db/database_helper.dart';
 import '../utils/import_export_helper.dart';
+import 'package:expense_tracker/l10n/app_localizations.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -15,30 +17,33 @@ class SettingsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final settings = Provider.of<SettingsProvider>(context);
     return Scaffold(
-      appBar: AppBar(title: const Text('Settings')),
+      appBar: AppBar(title: Text(AppLocalizations.of(context).settings)),
       body: ListView(
         children: [
-          // Currency picker
+          // Region = language + currency (with flags)
           ListTile(
-            title: const Text('Currency'),
-            subtitle: Text('Current: ${settings.currencySymbol}'),
+            title: Text(AppLocalizations.of(context).language),
+            subtitle: Text(settings.currentRegion.label),
             trailing: DropdownButton<String>(
-              value: settings.currencySymbol,
-              items: const [
-                DropdownMenuItem(value: '₱', child: Text('₱ PHP')),
-                DropdownMenuItem(value: '\$', child: Text('\$ USD')),
-                DropdownMenuItem(value: '€', child: Text('€ EUR')),
-                DropdownMenuItem(value: '₹', child: Text('₹ INR')),
-              ],
-              onChanged: (newSymbol) {
-                if (newSymbol != null) settings.setCurrency(newSymbol);
+              value: settings.regionId,
+              items: SettingsProvider.regionPresets.map((RegionPreset r) {
+                return DropdownMenuItem<String>(
+                  value: r.id,
+                  child: Text(r.label),
+                );
+              }).toList(),
+              onChanged: (id) {
+                if (id == null) return;
+                final region = SettingsProvider.regionPresets
+                    .firstWhere((r) => r.id == id);
+                settings.setRegion(region);
               },
             ),
           ),
 
           // Theme picker
           ListTile(
-            title: const Text('Theme'),
+            title: Text(AppLocalizations.of(context).theme),
             subtitle:
                 Text('Current: ${settings.currentTheme.name.toUpperCase()}'),
             trailing: DropdownButton<AppTheme>(
@@ -57,7 +62,7 @@ class SettingsScreen extends StatelessWidget {
 
           // Dark Mode toggle
           ListTile(
-            title: const Text('Dark Mode'),
+            title: Text(AppLocalizations.of(context).darkMode),
             trailing: Switch(
               value: settings.isDarkMode,
               onChanged: (value) => settings.toggleDarkMode(value),

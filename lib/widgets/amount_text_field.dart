@@ -1,43 +1,49 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
-import '../utils/formatter.dart'; // ✅ import the formatter
+import '../utils/formatter.dart';
 
-/// ✅ Formats digits with thousands commas *live*, while preserving cursor
-/// position by tracking how many digits are to the left of the cursor
-/// (instead of raw character offset, which breaks when commas shift).
+/// Live thousands-separator formatter that:
+/// - Allows typing "." to enter centavos immediately
+/// - Caps decimals at 2 digits
+/// - Keeps the cursor in the right place when commas appear/disappear
 class ThousandsSeparatorInputFormatter extends TextInputFormatter {
   @override
   TextEditingValue formatEditUpdate(
     TextEditingValue oldValue,
     TextEditingValue newValue,
   ) {
-    if (newValue.text.isEmpty) return newValue;
+    if (newValue.text.isEmpty) {
+      return newValue;
+    }
 
-    // How many digits sit before the cursor in the new (unformatted) input.
+    // Raw selection in the incoming (pre-format) text
     final selectionIndex = newValue.selection.end < 0
         ? newValue.text.length
         : newValue.selection.end;
-    final beforeCursor = newValue.text.substring(0, selectionIndex);
-    final digitsBeforeCursor =
-        beforeCursor.replaceAll(RegExp(r'[^0-9]'), '').length;
 
-    // Strip everything except digits and dots.
+    // Keep only digits and a single '.'
     String cleaned = newValue.text.replaceAll(RegExp(r'[^0-9.]'), '');
 
-    // Keep only the first decimal point, cap decimals at 2 digits (centavos).
-    final dotIndex = cleaned.indexOf('.');
-    if (dotIndex != -1) {
-      final intSection = cleaned.substring(0, dotIndex);
-      var decSection = cleaned.substring(dotIndex + 1).replaceAll('.', '');
-      if (decSection.length > 2) decSection = decSection.substring(0, 2);
+    // Only one decimal point, max 2 digits after it
+    final firstDot = cleaned.indexOf('.');
+    if (firstDot != -1) {
+      final intSection = cleaned.substring(0, firstDot);
+      var decSection = cleaned.substring(firstDot + 1).replaceAll('.', '');
+      if (decSection.length > 2) {
+        decSection = decSection.substring(0, 2);
+      }
       cleaned = '$intSection.$decSection';
     }
 
-    // Split into integer / decimal parts.
+    // Did the user just type / keep a trailing decimal point?
+    // (e.g. "12." so they can type centavos next)
+    final endsWithDot = cleaned.endsWith('.');
+    final hasDot = cleaned.contains('.');
+
     String intPart;
     String? decPart;
-    if (cleaned.contains('.')) {
+    if (hasDot) {
       final split = cleaned.split('.');
       intPart = split[0];
       decPart = split.length > 1 ? split[1] : '';
@@ -46,25 +52,57 @@ class ThousandsSeparatorInputFormatter extends TextInputFormatter {
       decPart = null;
     }
 
-    // Strip leading zeros (but allow a single leading 0 before a decimal).
-    intPart = intPart.replaceFirst(RegExp(r'^0+(?=\d)'), '');
+    // Strip leading zeros, but allow "0" and "0.xx"
+    if (intPart.isEmpty) {
+      intPart = '0';
+    } else {
+      intPart = intPart.replaceFirst(RegExp(r'^0+(?=\d)'), '');
+      if (intPart.isEmpty) intPart = '0';
+    }
 
     final formattedInt = _addCommas(intPart);
-    final formatted = decPart != null ? '$formattedInt.$decPart' : formattedInt;
 
-    // Walk the formatted string, counting digits, to find where the cursor
-    // should land so it stays "attached" to the same digit the user typed.
+    String formatted;
+    if (decPart != null) {
+      // Preserve trailing "." so user can type ".50" etc.
+      formatted = endsWithDot && decPart.isEmpty
+          ? '$formattedInt.'
+          : '$formattedInt.$decPart';
+    } else {
+      formatted = formattedInt;
+    }
+
+    // --- Cursor placement ---
+    // Count how many *significant* characters (digits + the decimal point)
+    // sit before the cursor in the cleaned input, then map that onto
+    // the formatted string.
+    final beforeCursorRaw = newValue.text.substring(0, selectionIndex);
+    final cleanedBefore = beforeCursorRaw.replaceAll(RegExp(r'[^0-9.]'), '');
+    // Cap to one dot in the before-cursor slice too
+    String significantBefore = cleanedBefore;
+    final dotInBefore = significantBefore.indexOf('.');
+    if (dotInBefore != -1) {
+      significantBefore = significantBefore.substring(0, dotInBefore + 1) +
+          significantBefore.substring(dotInBefore + 1).replaceAll('.', '');
+    }
+
+    int targetSignificant = significantBefore.length;
+    // If user typed only ".", significantBefore is "." → length 1
     int newCursor = formatted.length;
-    int digitsSeen = 0;
+    int seen = 0;
     for (int i = 0; i < formatted.length; i++) {
-      if (digitsSeen >= digitsBeforeCursor) {
-        newCursor = i;
+      final ch = formatted[i];
+      if (ch == ',') continue; // commas are visual only
+      seen++;
+      if (seen >= targetSignificant) {
+        newCursor = i + 1;
         break;
       }
-      if (RegExp(r'[0-9]').hasMatch(formatted[i])) {
-        digitsSeen++;
-      }
     }
+
+    // Clamp
+    if (newCursor > formatted.length) newCursor = formatted.length;
+    if (newCursor < 0) newCursor = 0;
 
     return TextEditingValue(
       text: formatted,
@@ -122,8 +160,8 @@ class _AmountTextFieldState extends State<AmountTextField> {
   }
 
   void _onFocusChange() {
-    // ✅ On blur, normalize to always show 2 decimal places (centavos),
-    // e.g. "16,166,166" -> "16,166,166.00".
+    // On blur, normalize to always show 2 decimal places (centavos),
+    // e.g. "16,166,166" -> "16,166,166.00" or "12." -> "12.00".
     if (!_focusNode.hasFocus) {
       _formatAmount();
     }
@@ -172,10 +210,7 @@ class _AmountTextFieldState extends State<AmountTextField> {
             const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       ),
       keyboardType: const TextInputType.numberWithOptions(decimal: true),
-      // ✅ Live comma formatting + max 2 decimal places, cursor-safe.
       inputFormatters: [ThousandsSeparatorInputFormatter()],
-      // No onChanged here anymore — all formatting happens inside the
-      // TextInputFormatter above, which is the cursor-safe way to do it.
     );
   }
 }

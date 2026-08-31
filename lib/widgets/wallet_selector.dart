@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../models/wallet.dart';
 import '../providers/wallet_provider.dart';
 import '../providers/transaction_provider.dart';
+import 'package:expense_tracker/l10n/app_localizations.dart';
 
 class WalletSelector extends StatelessWidget {
   const WalletSelector({super.key});
@@ -20,7 +21,7 @@ class WalletSelector extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 16),
             children: [
               ChoiceChip(
-                label: const Text('💰 All'),
+                label: Text('💰 ${AppLocalizations.of(context).allWallets}'),
                 selected: walletProvider.selectedWalletId == null,
                 onSelected: (_) => _selectWallet(context, null),
               ),
@@ -39,7 +40,7 @@ class WalletSelector extends StatelessWidget {
               ],
               ActionChip(
                 avatar: const Icon(Icons.add, size: 18),
-                label: const Text('Add wallet'),
+                label: Text(AppLocalizations.of(context).addWallet),
                 onPressed: () => _openAddWallet(context),
               ),
             ],
@@ -90,7 +91,7 @@ class WalletSelector extends StatelessWidget {
           children: [
             ListTile(
               leading: const Icon(Icons.edit),
-              title: const Text('Edit wallet'),
+              title: Text(AppLocalizations.of(context).editWallet),
               onTap: () {
                 Navigator.pop(sheetCtx);
                 _openEditWallet(context, wallet);
@@ -98,28 +99,28 @@ class WalletSelector extends StatelessWidget {
             ),
             ListTile(
               leading: const Icon(Icons.delete, color: Colors.red),
-              title: const Text('Delete wallet',
-                  style: TextStyle(color: Colors.red)),
+              title: Text(AppLocalizations.of(context).deleteWallet,
+                  style: const TextStyle(color: Colors.red)),
               onTap: () async {
                 Navigator.pop(sheetCtx);
                 final confirm = await showDialog<bool>(
                   context: context,
                   builder: (_) => AlertDialog(
-                    title: Text('Delete "${wallet.name}"?'),
-                    content: const Text(
-                      'This also deletes every transaction recorded under '
-                      'this wallet. This cannot be undone.',
+                    title: Text(AppLocalizations.of(context)
+                        .deleteWalletConfirmTitle(wallet.name)),
+                    content: Text(
+                      AppLocalizations.of(context).deleteWalletConfirmBody,
                     ),
                     actions: [
                       TextButton(
                         onPressed: () => Navigator.pop(context, false),
-                        child: const Text('Cancel'),
+                        child: Text(AppLocalizations.of(context).cancel),
                       ),
                       TextButton(
                         onPressed: () => Navigator.pop(context, true),
                         style:
                             TextButton.styleFrom(foregroundColor: Colors.red),
-                        child: const Text('Delete'),
+                        child: Text(AppLocalizations.of(context).delete),
                       ),
                     ],
                   ),

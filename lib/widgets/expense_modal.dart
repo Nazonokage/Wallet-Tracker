@@ -1,3 +1,4 @@
+import 'package:expense_tracker/l10n/app_localizations.dart';
 import 'package:expense_tracker/utils/formatter.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -81,10 +82,62 @@ class _ExpenseModalState extends State<ExpenseModal>
     setState(() {});
   }
 
-  void _save() {
+  /// Realistic "are you sure?" thresholds by category.
+  /// Commute is excluded (frequent small daily spends).
+  /// Thresholds are soft / realistic patterns, not hard budgets.
+  double? _largeSpendThreshold(Category category) {
+    switch (category) {
+      case Category.food:
+        return 100.0; // typical meal is well under this
+      case Category.bills:
+        return 2000.0; // rent / utilities / big bills
+      case Category.shopping:
+        return 500.0;
+      case Category.others:
+        return 300.0;
+      case Category.commute:
+        return null; // never warn
+    }
+  }
+
+  Future<void> _save() async {
     // ✅ Use parseAmount directly
     final rawAmount = parseAmount(_amountController.text);
     if (rawAmount == null || rawAmount <= 0) return;
+
+    final threshold = _largeSpendThreshold(_selectedCategory);
+    if (threshold != null && rawAmount > threshold) {
+      final l10n = AppLocalizations.of(context);
+      final categoryName = _selectedCategory.name;
+      final currency =
+          Provider.of<SettingsProvider>(context, listen: false).currencySymbol;
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: Text(l10n.largeExpenseTitle),
+          content: Text(
+            l10n.largeExpenseBody(
+              currency,
+              formatAmount(rawAmount),
+              categoryName,
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: Text(l10n.cancel),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              style: TextButton.styleFrom(foregroundColor: Colors.red),
+              child: Text(l10n.yesSpendIt),
+            ),
+          ],
+        ),
+      );
+      if (confirmed != true) return;
+    }
+
     final txn = Transaction(
       id: widget.initialTransaction?.id,
       type: TransactionType.expense,
@@ -97,7 +150,7 @@ class _ExpenseModalState extends State<ExpenseModal>
       walletId: _selectedWalletId,
     );
     widget.onSave(txn);
-    Navigator.pop(context);
+    if (mounted) Navigator.pop(context);
   }
 
   Widget _buildWalletDropdown(ThemeData theme) {
@@ -118,7 +171,7 @@ class _ExpenseModalState extends State<ExpenseModal>
           }).toList(),
           onChanged: (val) => setState(() => _selectedWalletId = val!),
           decoration: InputDecoration(
-            labelText: 'Wallet',
+            labelText: AppLocalizations.of(context).wallet,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
               borderSide: BorderSide(color: theme.colorScheme.outline),
@@ -160,8 +213,8 @@ class _ExpenseModalState extends State<ExpenseModal>
                 const SizedBox(width: 8),
                 Text(
                   widget.initialTransaction == null
-                      ? 'Add Expense'
-                      : 'Edit Expense',
+                      ? AppLocalizations.of(context).addExpense
+                      : AppLocalizations.of(context).editExpense,
                   style: theme.textTheme.titleLarge
                       ?.copyWith(fontWeight: FontWeight.bold),
                 ),
@@ -182,9 +235,9 @@ class _ExpenseModalState extends State<ExpenseModal>
                 indicatorSize: TabBarIndicatorSize.tab,
                 labelColor: theme.colorScheme.onPrimaryContainer,
                 unselectedLabelColor: theme.colorScheme.onSurfaceVariant,
-                tabs: const [
-                  Tab(text: 'Direct'),
-                  Tab(text: 'Change Calculator'),
+                tabs: [
+                  Tab(text: AppLocalizations.of(context).direct),
+                  Tab(text: AppLocalizations.of(context).changeCalculator),
                 ],
               ),
             ),
@@ -210,9 +263,10 @@ class _ExpenseModalState extends State<ExpenseModal>
                     borderRadius: BorderRadius.circular(14),
                   ),
                 ),
-                child: const Text(
-                  'Save',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+                child: Text(
+                  AppLocalizations.of(context).save,
+                  style: const TextStyle(
+                      fontSize: 18, fontWeight: FontWeight.w600),
                 ),
               ),
             ),
@@ -229,7 +283,7 @@ class _ExpenseModalState extends State<ExpenseModal>
       children: [
         AmountTextField(
           controller: _amountController,
-          labelText: 'Amount',
+          labelText: AppLocalizations.of(context).amount,
           currencySymbol: currency,
         ),
         const SizedBox(height: 12),
@@ -240,7 +294,7 @@ class _ExpenseModalState extends State<ExpenseModal>
         TextField(
           controller: _remarkController,
           decoration: InputDecoration(
-            labelText: 'Remark (optional)',
+            labelText: AppLocalizations.of(context).remarkOptional,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
               borderSide: BorderSide(color: theme.colorScheme.outline),
@@ -275,13 +329,13 @@ class _ExpenseModalState extends State<ExpenseModal>
       children: [
         AmountTextField(
           controller: _cashGivenController,
-          labelText: 'Cash given',
+          labelText: AppLocalizations.of(context).cashGiven,
           currencySymbol: currency,
         ),
         const SizedBox(height: 10),
         AmountTextField(
           controller: _cashReceivedController,
-          labelText: 'Cash received back',
+          labelText: AppLocalizations.of(context).cashReceivedBack,
           currencySymbol: currency,
         ),
         const SizedBox(height: 12),
@@ -298,7 +352,7 @@ class _ExpenseModalState extends State<ExpenseModal>
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                'Computed amount:',
+                AppLocalizations.of(context).computedAmount,
                 style: TextStyle(
                   fontWeight: FontWeight.w500,
                   color: theme.colorScheme.onSurfaceVariant,
@@ -323,7 +377,7 @@ class _ExpenseModalState extends State<ExpenseModal>
         TextField(
           controller: _remarkController,
           decoration: InputDecoration(
-            labelText: 'Remark (optional)',
+            labelText: AppLocalizations.of(context).remarkOptional,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
               borderSide: BorderSide(color: theme.colorScheme.outline),
