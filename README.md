@@ -1,157 +1,118 @@
-# Expense Tracker
+# Wallet Tracker (v1.8)
 
-A simple, offline-first personal expense tracker built with Flutter.
+A fast, customizable, offline-first personal expense and savings tracker built with Flutter.
 
-**Core promise:** Log a transaction in under 5 seconds, see your balance instantly, and understand your spending at a glance.
+**Core promise:** Log transactions in seconds, manage customizable wallets with brand logos, view interactive analytics with calendar pickers, and enjoy smooth ambient UI motion.
 
-No accounts. No cloud. No ads. Just fast entry and clear visibility into where your money goes.
-
----
-
-## Features
-
-### Dashboard
-- Large, clear **balance** at the top
-- **Weekly summary** ("This week: +₹X / −₹Y")
-- Scrollable transaction list (most recent first)
-  - Green for income, red for expense
-  - Category emoji + remark + amount + date
-- **Swipe left** → Edit
-- **Swipe right** → Delete (with undo)
-- Floating **+** (Income) and **−** (Expense) buttons placed in the natural thumb zone
-- Category + wallet filters
-
-### Income Entry
-- Amount (required)
-- Optional remark
-- Instant save
-
-### Expense Entry
-Two modes:
-- **Direct** — amount + category + optional remark
-- **Change Calculator** — enter cash given and cash received → auto-calculates the actual amount spent
-
-**Fixed categories (v1):**
-| Emoji | Category |
-|-------|----------|
-| 🍔    | Food     |
-| 🚌    | Commute  |
-| 📄    | Bills    |
-| 🛍️    | Shopping |
-| 📦    | Others   |
-
-### Analytics
-- Pie chart of spending by category
-- List with totals and percentages
-- All-time view (month filter planned for later)
-
-### Settings
-- **Clear all data** (double confirmation)
-- **Export** → CSV or Excel (.xlsx)
-- **Import** → CSV or Excel (.xlsx)  ← recover data after reinstalls / renames
-- Theme selection + Dark mode
-- Currency symbol selector
+No cloud sync. No accounts. No ads. Just pure speed, privacy, and full visibility over your money.
 
 ---
 
-## Export / Import format
+## 🌟 Key Features
 
-Both CSV and XLSX use the same columns:
+### 💳 1. Customizable Wallets & Savings
+- **1-Column Customizable Wallet Cards**: Grouped into Savings, Digital Wallets, Bank Accounts, Cards, and Cash.
+- **Brand Logo Badges & Color Swatches**: Authentic presets for **GCash**, **Maya**, **BPI**, **BDO**, **Wise**, **GoTyme**, **SeaBank**, **PayPal**, **UnionBank**, and **Cash**.
+- **Custom Subtitles & Categories**: Add personal subtitles like *"Emergency Fund"* or *"Salary Savings"*.
+- **Default Cash Selection**: Configured to launch with Cash wallet selected as default.
 
-```
-Date, Type, Category, Amount, Remark, Wallet
-```
+### 📱 2. Dashboard & Quick Actions
+- **Instant Balance Counter**: Dynamic numerical count-up animations for wallet balances.
+- **Swipe Gestures**:
+  - **Swipe Left** → Delete transaction (with instant Undo snackbar).
+  - **Swipe Right** → Edit transaction details.
+- **Fast Transaction Logging**:
+  - Green **+ Income** and Crimson Red **− Expense** buttons.
+  - Custom category picker (Food 🍔, Commute 🚌, Bills 📄, Shopping 🛍️, Others 📦).
+  - **Change Calculator Mode**: Enter cash given and cash returned to auto-compute spent amounts.
+- **Search & Filters**: Instant search by remarks or filter by wallet.
 
-- **Date**: ISO-8601 (`2025-08-30T14:22:00.000`)
-- **Type**: `Income` or `Expense`
-- **Category**: `food`, `commute`, `bills`, `shopping`, `others` (ignored for income)
-- **Amount**: number
-- **Remark**: free text (optional)
-- **Wallet**: wallet name (defaults to `Cash` if missing)
+### 📊 3. Interactive Analytics & Calendar Filters
+- **Calendar Filter Bar**:
+  - Filter spending by **All Time**, **Today**, **This Month**, or select **Specific Days** and **Custom Date Ranges** via the interactive calendar picker.
+- **Chart Toggle**: Switch between **Interactive Doughnut Charts** (with slice touch feedback and center totals) and **Bar Charts**.
+- **Category Progress Cards**: Detailed percentage breakdowns with category progress bars.
 
-You can open the exported file in Google Sheets / Excel, edit it, and re-import it later.
+### 🎨 4. Dynamic Visual Theme & Motion Design
+- **Ambient Floating Particles**: GPU-accelerated background particles flowing gently across screens.
+- **Staggered Animations**: Smooth fade and slide-up entrance transitions for cards and lists.
+- **Multiple Color Themes**: Emerald Green, Dark Slate, Sapphire Blue, Sunset Gold, and Midnight Purple.
+- **Dark Mode**: 1-tap Dark Mode switch with full contrast support.
+
+### ❓ 5. Help & User Guide Modal
+- **Tabbed Interactive User Guide**:
+  - **Gestures & Spends**: Swipe gesture instructions & transaction entry guides.
+  - **Wallets & Savings**: Presets, subtitles, and wallet category grouping.
+  - **Analytics**: Calendar date range selection & chart controls.
+  - **Data & Backup**: CSV / Excel backup guide and theme configuration.
+- **System Safe Area Support**: Fits comfortably above soft Android navigation buttons (`= o <`).
+
+### 🌐 6. Multi-language & Regional Settings
+- **7 Languages Supported**: English, Japanese (日本語), Chinese (中文), French (Français), Spanish (Español), German (Deutsch), and Portuguese (Português).
+- **Multi-Currency Region Presets**: Instant formatting for **₱ PHP**, **$ USD**, **€ EUR**, **¥ JPY**, **£ GBP**, **₹ INR**, and more.
+- **Data Import / Export**:
+  - Export all transaction logs to **CSV** or **Excel (.xlsx)**.
+  - Restore or import transactions from backup files safely.
 
 ---
 
-## Tech Stack
+## 🛠️ Tech Stack
 
-| Layer            | Choice              | Notes                          |
-|------------------|---------------------|--------------------------------|
-| Framework        | Flutter             | Cross-platform                 |
-| Database         | SQLite (`sqflite`)  | Fully offline                  |
-| State management | Provider            | Simple & sufficient            |
-| Charts           | fl_chart            | Lightweight pie charts         |
-| Preferences      | shared_preferences  | Theme & settings               |
-| CSV              | csv                 | Export / Import                |
-| Excel            | excel               | Native .xlsx Export / Import   |
+| Layer | Choice | Notes |
+|---|---|---|
+| **Framework** | Flutter 3.27+ | Cross-platform (Android, iOS, Windows, Desktop) |
+| **Database** | SQLite (`sqflite`) | Fully offline storage with v3 migration logic |
+| **State Management** | Provider | Reactive state for transactions, wallets, and settings |
+| **Charts** | `fl_chart` | Interactive pie & bar charts |
+| **Localization** | `flutter_localizations` & `intl` | ARB-based 7-language l10n with `flutter gen-l10n` |
+| **Export / Import** | `csv` & `excel` | Native .csv and .xlsx parsing & generation |
+| **Animations** | Custom Shaders / CurvedAnimation | Ambient particles, count-ups, staggered entrance |
 
 ---
 
-## Getting Started
+## 🚀 Getting Started
 
 ### Prerequisites
-- [Flutter SDK](https://docs.flutter.dev/get-started/install) (3.0+)
+- [Flutter SDK](https://docs.flutter.dev/get-started/install) (>= 3.0.0)
 - Android Studio / VS Code with Flutter extensions
 
-### Run the app
+### Run the App
 
 ```bash
+# Clone the repository
 git clone https://github.com/Nazonokage/Wallet-Tracker.git
 cd Wallet-Tracker
+
+# Install dependencies and generate l10n files
 flutter pub get
+flutter gen-l10n
+
+# Run the app
 flutter run
 ```
 
 ---
 
-## Project Structure
+## 📂 Project Structure
 
 ```
 lib/
-├── db/                 # SQLite database layer
-├── models/             # Transaction + Wallet models
+├── db/                 # SQLite Database helper & migrations
+├── l10n/               # ARB translation files (en, ja, zh, es, fr, de, pt)
+├── models/             # Transaction, Wallet, and WalletPreset models
 ├── providers/          # TransactionProvider, WalletProvider, SettingsProvider
-├── screens/            # Dashboard, Analytics, Settings
-├── utils/              # ImportExportHelper (CSV + XLSX)
-├── widgets/            # Reusable UI components
+├── screens/            # DashboardScreen, WalletsScreen, AnalyticsScreen, SettingsScreen
+├── utils/              # ImportExportHelper (CSV & XLSX) and Formatter
+├── widgets/            # HelpGuideModal, ParticleBackground, AnimatedCountText,
+│                       # FadeInSlide, WalletLogoWidget, ExpenseModal, IncomeModal
 └── main.dart
 ```
 
 ---
 
-## Recovering data after the rename
+## 📄 License
 
-If you previously used the app under the old package name and the database file was lost:
-
-1. If you still have an old CSV export → use **Settings → Import Data**
-2. If you only have the old APK installed on a device, you can try pulling the old SQLite file:
-   ```bash
-   adb shell "run-as <old.package.name> cat databases/wallet_tracker.db" > old.db
-   ```
-   (Then convert it manually or ask for help.)
-
-The new import feature is the recommended long-term recovery path.
-
----
-
-## Roadmap / Planned Features
-
-- [ ] Daily expense reminders (local notifications)
-- [ ] Date range filters on Dashboard
-- [ ] Better empty states & haptic feedback polish
-
-**Explicitly out of scope for MVP:**
-- Cloud sync / accounts
-- Multiple accounts beyond the simple wallet system
-- Custom categories
-- Budgets / spending limits
-- Recurring transactions
-
----
-
-## License
-
-This project is currently unlicensed. Feel free to use and modify for personal use.
+This project is open-source. Feel free to use, customize, and build upon it!
 
 ---
 

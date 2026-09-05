@@ -233,4 +233,88 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get portuguese => 'Português';
+
+  @override
+  String get walletsAndSavings => 'Portefeuilles et Épargne';
+
+  @override
+  String get totalNetWorth => 'Valeur Nette Totale';
+
+  @override
+  String get defaultWallet => 'Portefeuille par Défaut';
+
+  @override
+  String get analyticsAndTrends => 'Analyses et Tendances';
+
+  @override
+  String get noExpensesPeriod => 'Aucune dépense pour cette période';
+
+  @override
+  String get categoryBreakdown => 'Répartition par Catégorie';
+
+  @override
+  String get spends => 'Dépenses';
+
+  @override
+  String get helpAndUserGuide => 'Aide et Guide Utilisateur';
+
+  @override
+  String get helpSubtitle => 'Gestes de balayage, guides et astuces';
+
+  @override
+  String get allTime => 'Tout';
+
+  @override
+  String get today => 'Aujourd\'hui';
+
+  @override
+  String get thisMonth => 'Ce Mois';
+
+  @override
+  String get calendar => 'Calendrier';
+
+  @override
+  String get savings => 'Épargne';
+
+  @override
+  String get digitalWallet => 'Portefeuille Numérique';
+
+  @override
+  String get bankAccount => 'Compte Bancaire';
+
+  @override
+  String get card => 'Carte';
+
+  @override
+  String get cash => 'Espèces';
+
+  @override
+  String get exportData => 'Exporter les Données';
+
+  @override
+  String get importData => 'Importer les Données';
+
+  @override
+  String get exportImportSubtitle => 'CSV ou Excel (.xlsx)';
+
+  @override
+  String get totalExpense => 'Dépenses Totales';
+
+  @override
+  String get pickSingleDay => 'Choisir un Jour Spécifique';
+
+  @override
+  String get pickCustomDateRange => 'Plage de Dates Personnalisée';
+
+  @override
+  String get noWalletsFound => 'Aucun portefeuille trouvé';
+
+  @override
+  String get addYourFirstWallet => 'Ajouter votre premier portefeuille';
+
+  @override
+  String get accounts => 'Comptes';
+
+  @override
+  String get addCustomizableWallet => 'Ajouter un Portefeuille Personnalisable';
 }

@@ -234,4 +234,88 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get portuguese => 'Português';
+
+  @override
+  String get walletsAndSavings => 'Geldbörsen & Ersparnisse';
+
+  @override
+  String get totalNetWorth => 'Gesamtvermögen';
+
+  @override
+  String get defaultWallet => 'Standard-Geldbörse';
+
+  @override
+  String get analyticsAndTrends => 'Analysen & Trends';
+
+  @override
+  String get noExpensesPeriod => 'Keine Ausgaben in diesem Zeitraum';
+
+  @override
+  String get categoryBreakdown => 'Kategorie-Aufschlüsselung';
+
+  @override
+  String get spends => 'Ausgaben';
+
+  @override
+  String get helpAndUserGuide => 'Hilfe & Benutzerhandbuch';
+
+  @override
+  String get helpSubtitle => 'Wischgesten, Anleitungen & Tipps';
+
+  @override
+  String get allTime => 'Gesamter Zeitraum';
+
+  @override
+  String get today => 'Heute';
+
+  @override
+  String get thisMonth => 'Diesen Monat';
+
+  @override
+  String get calendar => 'Kalender';
+
+  @override
+  String get savings => 'Ersparnisse';
+
+  @override
+  String get digitalWallet => 'Digitale Geldbörse';
+
+  @override
+  String get bankAccount => 'Bankkonto';
+
+  @override
+  String get card => 'Karte';
+
+  @override
+  String get cash => 'Bargeld';
+
+  @override
+  String get exportData => 'Daten exportieren';
+
+  @override
+  String get importData => 'Daten importieren';
+
+  @override
+  String get exportImportSubtitle => 'CSV oder Excel (.xlsx)';
+
+  @override
+  String get totalExpense => 'Gesamtausgaben';
+
+  @override
+  String get pickSingleDay => 'Bestimmten Tag auswählen';
+
+  @override
+  String get pickCustomDateRange => 'Benutzerdefinierten Datumsbereich wählen';
+
+  @override
+  String get noWalletsFound => 'Keine Geldbörsen gefunden';
+
+  @override
+  String get addYourFirstWallet => 'Fügen Sie Ihre erste Geldbörse hinzu';
+
+  @override
+  String get accounts => 'Konten';
+
+  @override
+  String get addCustomizableWallet => 'Anpassbare Geldbörse hinzufügen';
 }

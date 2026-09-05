@@ -539,6 +539,174 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Português'**
   String get portuguese;
+
+  /// No description provided for @walletsAndSavings.
+  ///
+  /// In en, this message translates to:
+  /// **'Wallets & Savings'**
+  String get walletsAndSavings;
+
+  /// No description provided for @totalNetWorth.
+  ///
+  /// In en, this message translates to:
+  /// **'Total Net Worth'**
+  String get totalNetWorth;
+
+  /// No description provided for @defaultWallet.
+  ///
+  /// In en, this message translates to:
+  /// **'Default Wallet'**
+  String get defaultWallet;
+
+  /// No description provided for @analyticsAndTrends.
+  ///
+  /// In en, this message translates to:
+  /// **'Analytics & Trends'**
+  String get analyticsAndTrends;
+
+  /// No description provided for @noExpensesPeriod.
+  ///
+  /// In en, this message translates to:
+  /// **'No expenses found for this period'**
+  String get noExpensesPeriod;
+
+  /// No description provided for @categoryBreakdown.
+  ///
+  /// In en, this message translates to:
+  /// **'Category Breakdown'**
+  String get categoryBreakdown;
+
+  /// No description provided for @spends.
+  ///
+  /// In en, this message translates to:
+  /// **'Spends'**
+  String get spends;
+
+  /// No description provided for @helpAndUserGuide.
+  ///
+  /// In en, this message translates to:
+  /// **'Help & User Guide'**
+  String get helpAndUserGuide;
+
+  /// No description provided for @helpSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Swipe gestures, wallet guides & tips'**
+  String get helpSubtitle;
+
+  /// No description provided for @allTime.
+  ///
+  /// In en, this message translates to:
+  /// **'All Time'**
+  String get allTime;
+
+  /// No description provided for @today.
+  ///
+  /// In en, this message translates to:
+  /// **'Today'**
+  String get today;
+
+  /// No description provided for @thisMonth.
+  ///
+  /// In en, this message translates to:
+  /// **'This Month'**
+  String get thisMonth;
+
+  /// No description provided for @calendar.
+  ///
+  /// In en, this message translates to:
+  /// **'Calendar'**
+  String get calendar;
+
+  /// No description provided for @savings.
+  ///
+  /// In en, this message translates to:
+  /// **'Savings'**
+  String get savings;
+
+  /// No description provided for @digitalWallet.
+  ///
+  /// In en, this message translates to:
+  /// **'Digital Wallet'**
+  String get digitalWallet;
+
+  /// No description provided for @bankAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'Bank Account'**
+  String get bankAccount;
+
+  /// No description provided for @card.
+  ///
+  /// In en, this message translates to:
+  /// **'Card'**
+  String get card;
+
+  /// No description provided for @cash.
+  ///
+  /// In en, this message translates to:
+  /// **'Cash'**
+  String get cash;
+
+  /// No description provided for @exportData.
+  ///
+  /// In en, this message translates to:
+  /// **'Export Data'**
+  String get exportData;
+
+  /// No description provided for @importData.
+  ///
+  /// In en, this message translates to:
+  /// **'Import Data'**
+  String get importData;
+
+  /// No description provided for @exportImportSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'CSV or Excel (.xlsx)'**
+  String get exportImportSubtitle;
+
+  /// No description provided for @totalExpense.
+  ///
+  /// In en, this message translates to:
+  /// **'Total Expense'**
+  String get totalExpense;
+
+  /// No description provided for @pickSingleDay.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick Specific Single Day'**
+  String get pickSingleDay;
+
+  /// No description provided for @pickCustomDateRange.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick Custom Date Range'**
+  String get pickCustomDateRange;
+
+  /// No description provided for @noWalletsFound.
+  ///
+  /// In en, this message translates to:
+  /// **'No wallets found'**
+  String get noWalletsFound;
+
+  /// No description provided for @addYourFirstWallet.
+  ///
+  /// In en, this message translates to:
+  /// **'Add your first wallet'**
+  String get addYourFirstWallet;
+
+  /// No description provided for @accounts.
+  ///
+  /// In en, this message translates to:
+  /// **'Accounts'**
+  String get accounts;
+
+  /// No description provided for @addCustomizableWallet.
+  ///
+  /// In en, this message translates to:
+  /// **'Add Customizable Wallet'**
+  String get addCustomizableWallet;
 }
 
 class _AppLocalizationsDelegate

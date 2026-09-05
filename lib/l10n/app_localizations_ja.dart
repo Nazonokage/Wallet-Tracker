@@ -229,4 +229,88 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get portuguese => 'Português';
+
+  @override
+  String get walletsAndSavings => 'ウォレットと貯金';
+
+  @override
+  String get totalNetWorth => '総資産額';
+
+  @override
+  String get defaultWallet => 'デフォルトウォレット';
+
+  @override
+  String get analyticsAndTrends => '分析とトレンド';
+
+  @override
+  String get noExpensesPeriod => 'この期間の支出はありません';
+
+  @override
+  String get categoryBreakdown => 'カテゴリ別内訳';
+
+  @override
+  String get spends => '件の支出';
+
+  @override
+  String get helpAndUserGuide => 'ヘルプとユーザーガイド';
+
+  @override
+  String get helpSubtitle => 'スワイプ操作、ガイド、ヒント';
+
+  @override
+  String get allTime => '全期間';
+
+  @override
+  String get today => '今日';
+
+  @override
+  String get thisMonth => '今月';
+
+  @override
+  String get calendar => 'カレンダー';
+
+  @override
+  String get savings => '貯蓄';
+
+  @override
+  String get digitalWallet => 'デジタルウォレット';
+
+  @override
+  String get bankAccount => '銀行口座';
+
+  @override
+  String get card => 'カード';
+
+  @override
+  String get cash => '現金';
+
+  @override
+  String get exportData => 'データをエクスポート';
+
+  @override
+  String get importData => 'データをインポート';
+
+  @override
+  String get exportImportSubtitle => 'CSV または Excel (.xlsx)';
+
+  @override
+  String get totalExpense => '総支出';
+
+  @override
+  String get pickSingleDay => '特定の日を選択';
+
+  @override
+  String get pickCustomDateRange => 'カスタム日付範囲を選択';
+
+  @override
+  String get noWalletsFound => 'ウォレットが見つかりません';
+
+  @override
+  String get addYourFirstWallet => '最初のウォレットを追加';
+
+  @override
+  String get accounts => '口座';
+
+  @override
+  String get addCustomizableWallet => 'カスタムウォレットを追加';
 }

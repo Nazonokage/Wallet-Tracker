@@ -117,9 +117,9 @@ class _MainScreenState extends State<MainScreen> {
             icon: const Icon(Icons.home),
             label: l10n.dashboard,
           ),
-          const BottomNavigationBarItem(
-            icon: Icon(Icons.account_balance_wallet),
-            label: 'Wallets',
+          BottomNavigationBarItem(
+            icon: const Icon(Icons.account_balance_wallet),
+            label: l10n.walletsAndSavings,
           ),
           BottomNavigationBarItem(
             icon: const Icon(Icons.pie_chart),

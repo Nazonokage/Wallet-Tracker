@@ -7,6 +7,9 @@ import '../providers/transaction_provider.dart';
 import '../providers/settings_provider.dart';
 import '../models/transaction.dart';
 import '../utils/formatter.dart';
+import '../widgets/particle_background.dart';
+import '../widgets/animated_count_text.dart';
+import '../widgets/fade_in_slide.dart';
 
 enum AnalyticsDateFilter { allTime, thisMonth, today, custom }
 
@@ -164,20 +167,20 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
     }
   }
 
-  String _getDateFilterLabel() {
+  String _getDateFilterLabel(AppLocalizations l10n) {
     switch (_dateFilter) {
       case AnalyticsDateFilter.today:
-        return 'Today (${DateFormat.MMMd().format(DateTime.now())})';
+        return '${l10n.today} (${DateFormat.MMMd().format(DateTime.now())})';
       case AnalyticsDateFilter.thisMonth:
-        return 'This Month (${DateFormat.MMMM().format(DateTime.now())})';
+        return '${l10n.thisMonth} (${DateFormat.MMMM().format(DateTime.now())})';
       case AnalyticsDateFilter.custom:
-        if (_customDateRange == null) return 'Custom Date';
+        if (_customDateRange == null) return l10n.calendar;
         if (_isSameDay(_customDateRange!.start, _customDateRange!.end)) {
           return DateFormat.yMMMd().format(_customDateRange!.start);
         }
         return '${DateFormat.MMMd().format(_customDateRange!.start)} - ${DateFormat.MMMd().format(_customDateRange!.end)}';
       case AnalyticsDateFilter.allTime:
-        return 'All Time';
+        return l10n.allTime;
     }
   }
 
@@ -189,7 +192,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Analytics & Trends', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: Text(l10n.analyticsAndTrends, style: const TextStyle(fontWeight: FontWeight.bold)),
         actions: [
           IconButton(
             icon: Icon(
@@ -207,266 +210,293 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
           ),
         ],
       ),
-      body: Consumer<TransactionProvider>(
-        builder: (ctx, provider, _) {
-          final filteredExpenses = _filterExpenses(provider.transactions);
+      body: ParticleBackground(
+        child: Consumer<TransactionProvider>(
+          builder: (ctx, provider, _) {
+            final filteredExpenses = _filterExpenses(provider.transactions);
 
-          // Calculate category totals
-          final Map<Category, double> categoryTotals = {};
-          for (var txn in filteredExpenses) {
-            if (txn.category != null) {
-              categoryTotals[txn.category!] =
-                  (categoryTotals[txn.category!] ?? 0) + txn.amount;
+            // Calculate category totals
+            final Map<Category, double> categoryTotals = {};
+            for (var txn in filteredExpenses) {
+              if (txn.category != null) {
+                categoryTotals[txn.category!] =
+                    (categoryTotals[txn.category!] ?? 0) + txn.amount;
+              }
             }
-          }
-          final totalExpense = categoryTotals.values.fold(0.0, (a, b) => a + b);
+            final totalExpense = categoryTotals.values.fold(0.0, (a, b) => a + b);
 
-          return Column(
-            children: [
-              const SizedBox(height: 8),
+            int entryIndex = 0;
 
-              // Calendar Filter Bar (All Time, Today, This Month, Pick Date)
-              SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Row(
-                  children: [
-                    ChoiceChip(
-                      label: const Text('All Time'),
-                      selected: _dateFilter == AnalyticsDateFilter.allTime,
-                      onSelected: (_) => setState(() => _dateFilter = AnalyticsDateFilter.allTime),
-                    ),
-                    const SizedBox(width: 8),
-                    ChoiceChip(
-                      label: const Text('Today'),
-                      selected: _dateFilter == AnalyticsDateFilter.today,
-                      onSelected: (_) => setState(() => _dateFilter = AnalyticsDateFilter.today),
-                    ),
-                    const SizedBox(width: 8),
-                    ChoiceChip(
-                      label: const Text('This Month'),
-                      selected: _dateFilter == AnalyticsDateFilter.thisMonth,
-                      onSelected: (_) => setState(() => _dateFilter = AnalyticsDateFilter.thisMonth),
-                    ),
-                    const SizedBox(width: 8),
-                    ChoiceChip(
-                      avatar: const Icon(Icons.calendar_month, size: 16),
-                      label: Text(_dateFilter == AnalyticsDateFilter.custom
-                          ? _getDateFilterLabel()
-                          : 'Calendar'),
-                      selected: _dateFilter == AnalyticsDateFilter.custom,
-                      onSelected: (_) => _showCalendarMenu(context),
-                    ),
-                  ],
-                ),
-              ),
+            return Column(
+              children: [
+                const SizedBox(height: 8),
 
-              const SizedBox(height: 12),
-
-              // Summary Banner (Theme-adaptive)
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                  decoration: BoxDecoration(
-                    color: theme.colorScheme.primaryContainer.withValues(alpha: 0.3),
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(
-                      color: theme.colorScheme.primary.withValues(alpha: 0.2),
+                // Calendar Filter Bar (All Time, Today, This Month, Pick Date)
+                FadeInSlide(
+                  duration: const Duration(milliseconds: 350),
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: Row(
+                      children: [
+                        ChoiceChip(
+                          label: Text(l10n.allTime),
+                          selected: _dateFilter == AnalyticsDateFilter.allTime,
+                          onSelected: (_) => setState(() => _dateFilter = AnalyticsDateFilter.allTime),
+                        ),
+                        const SizedBox(width: 8),
+                        ChoiceChip(
+                          label: Text(l10n.today),
+                          selected: _dateFilter == AnalyticsDateFilter.today,
+                          onSelected: (_) => setState(() => _dateFilter = AnalyticsDateFilter.today),
+                        ),
+                        const SizedBox(width: 8),
+                        ChoiceChip(
+                          label: Text(l10n.thisMonth),
+                          selected: _dateFilter == AnalyticsDateFilter.thisMonth,
+                          onSelected: (_) => setState(() => _dateFilter = AnalyticsDateFilter.thisMonth),
+                        ),
+                        const SizedBox(width: 8),
+                        ChoiceChip(
+                          avatar: const Icon(Icons.calendar_month, size: 16),
+                          label: Text(_dateFilter == AnalyticsDateFilter.custom
+                              ? _getDateFilterLabel(l10n)
+                              : l10n.calendar),
+                          selected: _dateFilter == AnalyticsDateFilter.custom,
+                          onSelected: (_) => _showCalendarMenu(context),
+                        ),
+                      ],
                     ),
                   ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                ),
+
+                const SizedBox(height: 12),
+
+                // Summary Banner (Theme-adaptive with animated count text)
+                FadeInSlide(
+                  delayMilliseconds: 100,
+                  duration: const Duration(milliseconds: 400),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      decoration: BoxDecoration(
+                        color: theme.colorScheme.primaryContainer.withValues(alpha: 0.3),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: theme.colorScheme.primary.withValues(alpha: 0.2),
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text(
-                            _getDateFilterLabel(),
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: theme.colorScheme.onSurfaceVariant,
-                              fontWeight: FontWeight.w500,
-                            ),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                _getDateFilterLabel(l10n),
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: theme.colorScheme.onSurfaceVariant,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              AnimatedCountText(
+                                value: totalExpense,
+                                prefix: currency,
+                                style: TextStyle(
+                                  fontSize: 22,
+                                  fontWeight: FontWeight.bold,
+                                  color: theme.colorScheme.primary,
+                                ),
+                              ),
+                            ],
                           ),
-                          const SizedBox(height: 2),
-                          Text(
-                            '$currency${formatAmount(totalExpense)}',
-                            style: TextStyle(
-                              fontSize: 22,
-                              fontWeight: FontWeight.bold,
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                            decoration: BoxDecoration(
                               color: theme.colorScheme.primary,
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: Text(
+                              '${filteredExpenses.length} ${l10n.spends}',
+                              style: TextStyle(
+                                color: theme.colorScheme.onPrimary,
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
                           ),
                         ],
                       ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                        decoration: BoxDecoration(
-                          color: theme.colorScheme.primary,
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Text(
-                          '${filteredExpenses.length} Spends',
-                          style: TextStyle(
-                            color: theme.colorScheme.onPrimary,
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-
-              const SizedBox(height: 16),
-
-              if (totalExpense == 0)
-                Expanded(
-                  child: Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Text('📊', style: TextStyle(fontSize: 64)),
-                        const SizedBox(height: 16),
-                        Text(
-                          l10n.noExpensesYet,
-                          style: theme.textTheme.titleLarge?.copyWith(
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'No expenses found for this period',
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            color: theme.colorScheme.onSurfaceVariant,
-                          ),
-                        ),
-                      ],
                     ),
                   ),
-                )
-              else
-                Expanded(
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: Column(
-                      children: [
-                        // Chart Container
-                        Card(
-                          elevation: 2,
-                          shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(20)),
-                          child: Padding(
-                            padding: const EdgeInsets.all(20),
-                            child: _chartType == ChartType.doughnut
-                                ? _buildDoughnutChart(categoryTotals, totalExpense, currency, theme)
-                                : _buildBarChart(categoryTotals, currency, theme),
+                ),
+
+                const SizedBox(height: 16),
+
+                if (totalExpense == 0)
+                  Expanded(
+                    child: Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Text('📊', style: TextStyle(fontSize: 64)),
+                          const SizedBox(height: 16),
+                          Text(
+                            l10n.noExpensesYet,
+                            style: theme.textTheme.titleLarge?.copyWith(
+                              fontWeight: FontWeight.w600,
+                            ),
                           ),
-                        ),
-                        const SizedBox(height: 16),
-
-                        // Category Breakdown List
-                        Text(
-                          'Category Breakdown',
-                          style: theme.textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.bold,
+                          const SizedBox(height: 8),
+                          Text(
+                            l10n.noExpensesPeriod,
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              color: theme.colorScheme.onSurfaceVariant,
+                            ),
                           ),
-                        ),
-                        const SizedBox(height: 10),
-
-                        ...categoryTotals.entries.map((entry) {
-                          final category = entry.key;
-                          final amount = entry.value;
-                          final percentage = (amount / totalExpense);
-                          final catColor = _categoryColor(category);
-
-                          return Container(
-                            margin: const EdgeInsets.only(bottom: 10),
-                            padding: const EdgeInsets.all(14),
-                            decoration: BoxDecoration(
-                              color: theme.colorScheme.surface,
-                              borderRadius: BorderRadius.circular(16),
-                              border: Border.all(
-                                color: theme.colorScheme.outlineVariant
-                                    .withValues(alpha: 0.5),
+                        ],
+                      ),
+                    ),
+                  )
+                else
+                  Expanded(
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: Column(
+                        children: [
+                          // Chart Container
+                          FadeInSlide(
+                            delayMilliseconds: 200,
+                            child: Card(
+                              elevation: 2,
+                              shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(20)),
+                              child: Padding(
+                                padding: const EdgeInsets.all(20),
+                                child: _chartType == ChartType.doughnut
+                                    ? _buildDoughnutChart(categoryTotals, totalExpense, currency, theme, l10n)
+                                    : _buildBarChart(categoryTotals, currency, theme, l10n),
                               ),
                             ),
-                            child: Column(
-                              children: [
-                                Row(
+                          ),
+                          const SizedBox(height: 16),
+
+                          // Category Breakdown List
+                          FadeInSlide(
+                            delayMilliseconds: 250,
+                            child: Align(
+                              alignment: Alignment.centerLeft,
+                              child: Text(
+                                l10n.categoryBreakdown,
+                                style: theme.textTheme.titleMedium?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 10),
+
+                          ...categoryTotals.entries.map((entry) {
+                            final category = entry.key;
+                            final amount = entry.value;
+                            final percentage = (amount / totalExpense);
+                            final catColor = _categoryColor(category);
+                            final currentIndex = entryIndex++;
+
+                            return FadeInSlide(
+                              delayMilliseconds: 300 + (currentIndex * 50),
+                              child: Container(
+                                margin: const EdgeInsets.only(bottom: 10),
+                                padding: const EdgeInsets.all(14),
+                                decoration: BoxDecoration(
+                                  color: theme.colorScheme.surface,
+                                  borderRadius: BorderRadius.circular(16),
+                                  border: Border.all(
+                                    color: theme.colorScheme.outlineVariant
+                                        .withValues(alpha: 0.5),
+                                  ),
+                                ),
+                                child: Column(
                                   children: [
-                                    Container(
-                                      padding: const EdgeInsets.all(8),
-                                      decoration: BoxDecoration(
-                                        color: catColor.withValues(alpha: 0.15),
-                                        shape: BoxShape.circle,
-                                      ),
-                                      child: Text(
-                                        _categoryEmoji(category),
-                                        style: const TextStyle(fontSize: 20),
-                                      ),
-                                    ),
-                                    const SizedBox(width: 12),
-                                    Expanded(
-                                      child: Text(
-                                        _categoryLabel(category, l10n),
-                                        style: const TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 16,
-                                        ),
-                                      ),
-                                    ),
-                                    Column(
-                                      crossAxisAlignment: CrossAxisAlignment.end,
+                                    Row(
                                       children: [
-                                        Text(
-                                          '$currency${formatAmount(amount)}',
-                                          style: const TextStyle(
-                                            fontWeight: FontWeight.bold,
-                                            fontSize: 16,
+                                        Container(
+                                          padding: const EdgeInsets.all(8),
+                                          decoration: BoxDecoration(
+                                            color: catColor.withValues(alpha: 0.15),
+                                            shape: BoxShape.circle,
+                                          ),
+                                          child: Text(
+                                            _categoryEmoji(category),
+                                            style: const TextStyle(fontSize: 20),
                                           ),
                                         ),
-                                        Text(
-                                          '${(percentage * 100).toStringAsFixed(1)}%',
-                                          style: TextStyle(
-                                            fontSize: 12,
-                                            color: theme.colorScheme.onSurfaceVariant,
+                                        const SizedBox(width: 12),
+                                        Expanded(
+                                          child: Text(
+                                            _categoryLabel(category, l10n),
+                                            style: const TextStyle(
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: 16,
+                                            ),
                                           ),
+                                        ),
+                                        Column(
+                                          crossAxisAlignment: CrossAxisAlignment.end,
+                                          children: [
+                                            AnimatedCountText(
+                                              value: amount,
+                                              prefix: currency,
+                                              style: const TextStyle(
+                                                fontWeight: FontWeight.bold,
+                                                fontSize: 16,
+                                              ),
+                                            ),
+                                            Text(
+                                              '${(percentage * 100).toStringAsFixed(1)}%',
+                                              style: TextStyle(
+                                                fontSize: 12,
+                                                color: theme.colorScheme.onSurfaceVariant,
+                                              ),
+                                            ),
+                                          ],
                                         ),
                                       ],
                                     ),
+                                    const SizedBox(height: 10),
+                                    ClipRRect(
+                                      borderRadius: BorderRadius.circular(6),
+                                      child: LinearProgressIndicator(
+                                        value: percentage,
+                                        minHeight: 6,
+                                        backgroundColor: catColor.withValues(alpha: 0.15),
+                                        valueColor: AlwaysStoppedAnimation<Color>(catColor),
+                                      ),
+                                    ),
                                   ],
                                 ),
-                                const SizedBox(height: 10),
-                                ClipRRect(
-                                  borderRadius: BorderRadius.circular(6),
-                                  child: LinearProgressIndicator(
-                                    value: percentage,
-                                    minHeight: 6,
-                                    backgroundColor: catColor.withValues(alpha: 0.15),
-                                    valueColor: AlwaysStoppedAnimation<Color>(catColor),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          );
-                        }),
-                        const SizedBox(height: 24),
-                      ],
+                              ),
+                            );
+                          }),
+                          const SizedBox(height: 24),
+                        ],
+                      ),
                     ),
                   ),
-                ),
-            ],
-          );
-        },
+              ],
+            );
+          },
+        ),
       ),
     );
   }
 
   void _showCalendarMenu(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
     showModalBottomSheet(
       context: context,
       shape: const RoundedRectangleBorder(
@@ -477,8 +507,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
           children: [
             ListTile(
               leading: Icon(Icons.today, color: theme.colorScheme.primary),
-              title: const Text('Pick Specific Single Day'),
-              subtitle: const Text('Choose one specific date (e.g. Sep 5)'),
+              title: Text(l10n.pickSingleDay),
               onTap: () {
                 Navigator.pop(sheetCtx);
                 _pickSingleDay(context);
@@ -486,8 +515,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
             ),
             ListTile(
               leading: Icon(Icons.date_range, color: theme.colorScheme.primary),
-              title: const Text('Pick Custom Date Range'),
-              subtitle: const Text('Select start and end dates'),
+              title: Text(l10n.pickCustomDateRange),
               onTap: () {
                 Navigator.pop(sheetCtx);
                 _pickCustomDateRange(context);
@@ -504,6 +532,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
     double totalExpense,
     String currency,
     ThemeData theme,
+    AppLocalizations l10n,
   ) {
     final sections = <PieChartSectionData>[];
     int index = 0;
@@ -589,8 +618,8 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
               ),
               Text(
                 _touchedIndex >= 0 && _touchedIndex < categoryTotals.length
-                    ? categoryTotals.keys.elementAt(_touchedIndex).name.toUpperCase()
-                    : 'TOTAL EXPENSE',
+                    ? _categoryLabel(categoryTotals.keys.elementAt(_touchedIndex), l10n).toUpperCase()
+                    : l10n.totalExpense.toUpperCase(),
                 style: TextStyle(
                   fontSize: 10,
                   fontWeight: FontWeight.bold,
@@ -609,6 +638,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
     Map<Category, double> categoryTotals,
     String currency,
     ThemeData theme,
+    AppLocalizations l10n,
   ) {
     final entries = categoryTotals.entries.toList();
     double maxVal = 0;
@@ -629,7 +659,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
               getTooltipItem: (group, groupIndex, rod, rodIndex) {
                 final cat = entries[group.x.toInt()].key;
                 return BarTooltipItem(
-                  '${_categoryEmoji(cat)} ${cat.name}\n$currency${formatAmount(rod.toY)}',
+                  '${_categoryEmoji(cat)} ${_categoryLabel(cat, l10n)}\n$currency${formatAmount(rod.toY)}',
                   const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
                 );
               },

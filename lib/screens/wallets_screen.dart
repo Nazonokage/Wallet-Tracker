@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:expense_tracker/l10n/app_localizations.dart';
 import '../models/wallet.dart';
 import '../providers/wallet_provider.dart';
 import '../providers/transaction_provider.dart';
@@ -7,6 +8,9 @@ import '../providers/settings_provider.dart';
 import '../utils/formatter.dart';
 import '../widgets/wallet_modal.dart';
 import '../widgets/wallet_logo.dart';
+import '../widgets/particle_background.dart';
+import '../widgets/animated_count_text.dart';
+import '../widgets/fade_in_slide.dart';
 
 class WalletsScreen extends StatefulWidget {
   final Function(int?)? onWalletSelected;
@@ -18,7 +22,6 @@ class WalletsScreen extends StatefulWidget {
 }
 
 class _WalletsScreenState extends State<WalletsScreen> {
-  // Calculates live balance for a specific wallet: initialBalance + net transactions
   double _calculateWalletBalance(
       Wallet wallet, TransactionProvider txnProvider) {
     final netTxn = txnProvider.netBalanceForWallet(wallet.id!);
@@ -29,218 +32,226 @@ class _WalletsScreenState extends State<WalletsScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final currency = Provider.of<SettingsProvider>(context).currencySymbol;
+    final l10n = AppLocalizations.of(context);
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
-          'Wallets & Savings',
-          style: TextStyle(fontWeight: FontWeight.bold),
+        title: Text(
+          l10n.walletsAndSavings,
+          style: const TextStyle(fontWeight: FontWeight.bold),
         ),
         actions: [
           IconButton(
             icon: const Icon(Icons.add_card),
-            tooltip: 'Add Wallet',
+            tooltip: l10n.addWallet,
             onPressed: () => _openAddWallet(context),
           ),
         ],
       ),
-      body: Consumer2<WalletProvider, TransactionProvider>(
-        builder: (context, walletProvider, txnProvider, _) {
-          final wallets = walletProvider.wallets;
+      body: ParticleBackground(
+        child: Consumer2<WalletProvider, TransactionProvider>(
+          builder: (context, walletProvider, txnProvider, _) {
+            final wallets = walletProvider.wallets;
 
-          if (wallets.isEmpty) {
-            return Center(
+            if (wallets.isEmpty) {
+              return Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.account_balance_wallet_outlined,
+                        size: 64, color: Colors.grey),
+                    const SizedBox(height: 16),
+                    Text(l10n.noWalletsFound,
+                        style:
+                            const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 8),
+                    ElevatedButton.icon(
+                      onPressed: () => _openAddWallet(context),
+                      icon: const Icon(Icons.add),
+                      label: Text(l10n.addYourFirstWallet),
+                    ),
+                  ],
+                ),
+              );
+            }
+
+            double totalNetBalance = 0;
+            for (final w in wallets) {
+              totalNetBalance += _calculateWalletBalance(w, txnProvider);
+            }
+
+            final Map<String, List<Wallet>> grouped = {};
+            for (final wallet in wallets) {
+              final cat = wallet.category.isEmpty ? l10n.bankAccount : wallet.category;
+              grouped.putIfAbsent(cat, () => []).add(wallet);
+            }
+
+            int itemCounter = 0;
+
+            return SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Icon(Icons.account_balance_wallet_outlined,
-                      size: 64, color: Colors.grey),
-                  const SizedBox(height: 16),
-                  const Text('No wallets found',
-                      style:
-                          TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                  const SizedBox(height: 8),
-                  ElevatedButton.icon(
-                    onPressed: () => _openAddWallet(context),
-                    icon: const Icon(Icons.add),
-                    label: const Text('Add your first wallet'),
+                  // Top Summary Card
+                  Card(
+                    elevation: 3,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(20),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                l10n.totalNetWorth,
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: theme.colorScheme.onSurfaceVariant,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 10, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: theme.colorScheme.primaryContainer,
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Text(
+                                  '${wallets.length} ${l10n.accounts}',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.bold,
+                                    color: theme.colorScheme.onPrimaryContainer,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 6),
+                          AnimatedCountText(
+                            value: totalNetBalance,
+                            prefix: currency,
+                            style: const TextStyle(
+                              fontSize: 32,
+                              fontWeight: FontWeight.bold,
+                              letterSpacing: -0.5,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
+                  const SizedBox(height: 20),
+
+                  // Render 1-Column Grouped Categories
+                  ...grouped.entries.map((entry) {
+                    final categoryName = entry.key;
+                    final categoryWallets = entry.value;
+
+                    double categoryTotal = 0;
+                    for (final w in categoryWallets) {
+                      categoryTotal += _calculateWalletBalance(w, txnProvider);
+                    }
+
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Category Header
+                        Padding(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 4, vertical: 8),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Row(
+                                children: [
+                                  const Icon(Icons.arrow_drop_down,
+                                      size: 22, color: Colors.grey),
+                                  const SizedBox(width: 2),
+                                  Text(
+                                    categoryName,
+                                    style: const TextStyle(
+                                      fontSize: 17,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              Text(
+                                '$currency${formatAmount(categoryTotal)}',
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.grey,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+
+                        // 1-Column List of customizable cards
+                        ...categoryWallets.map((wallet) {
+                          itemCounter++;
+                          final delay = (itemCounter * 50).clamp(0, 400);
+                          final walletBalance =
+                              _calculateWalletBalance(wallet, txnProvider);
+                          return FadeInSlide(
+                            delayMilliseconds: delay,
+                            child: _build1ColumnWalletCard(
+                              context: context,
+                              wallet: wallet,
+                              balance: walletBalance,
+                              currency: currency,
+                            ),
+                          );
+                        }),
+
+                        const SizedBox(height: 12),
+                      ],
+                    );
+                  }),
+
+                  const SizedBox(height: 8),
+
+                  // Add Wallet Button at bottom
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton.icon(
+                      onPressed: () => _openAddWallet(context),
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        side: BorderSide(
+                          color: theme.colorScheme.primary.withValues(alpha: 0.5),
+                          width: 1.5,
+                        ),
+                      ),
+                      icon: const Icon(Icons.add_circle_outline),
+                      label: Text(
+                        l10n.addCustomizableWallet,
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
                 ],
               ),
             );
-          }
-
-          // Calculate grand total net balance
-          double totalNetBalance = 0;
-          for (final w in wallets) {
-            totalNetBalance += _calculateWalletBalance(w, txnProvider);
-          }
-
-          // Group wallets by category
-          final Map<String, List<Wallet>> grouped = {};
-          for (final wallet in wallets) {
-            final cat = wallet.category.isEmpty ? 'Bank Accounts' : wallet.category;
-            grouped.putIfAbsent(cat, () => []).add(wallet);
-          }
-
-          return SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Top Summary Card (Reusing Dashboard styling)
-                Card(
-                  elevation: 3,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(20),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              'Total Net Savings',
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: theme.colorScheme.onSurfaceVariant,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 10, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: theme.colorScheme.primaryContainer,
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: Text(
-                                '${wallets.length} Accounts',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.bold,
-                                  color: theme.colorScheme.onPrimaryContainer,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 6),
-                        Text(
-                          '$currency${formatAmount(totalNetBalance)}',
-                          style: const TextStyle(
-                            fontSize: 32,
-                            fontWeight: FontWeight.bold,
-                            letterSpacing: -0.5,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 20),
-
-                // Render 1-Column Grouped Categories
-                ...grouped.entries.map((entry) {
-                  final categoryName = entry.key;
-                  final categoryWallets = entry.value;
-
-                  // Compute total balance for this category
-                  double categoryTotal = 0;
-                  for (final w in categoryWallets) {
-                    categoryTotal += _calculateWalletBalance(w, txnProvider);
-                  }
-
-                  return Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Category Header matching reference image (▼ Category Name ...... ₱Total)
-                      Padding(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 4, vertical: 8),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Row(
-                              children: [
-                                const Icon(Icons.arrow_drop_down,
-                                    size: 22, color: Colors.grey),
-                                const SizedBox(width: 2),
-                                Text(
-                                  categoryName,
-                                  style: const TextStyle(
-                                    fontSize: 17,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            Text(
-                              '$currency${formatAmount(categoryTotal)}',
-                              style: const TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.grey,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-
-                      // 1-Column List of customizable cards
-                      ...categoryWallets.map((wallet) {
-                        final walletBalance =
-                            _calculateWalletBalance(wallet, txnProvider);
-                        return _build1ColumnWalletCard(
-                          context: context,
-                          wallet: wallet,
-                          balance: walletBalance,
-                          currency: currency,
-                        );
-                      }),
-
-                      const SizedBox(height: 12),
-                    ],
-                  );
-                }),
-
-                const SizedBox(height: 8),
-
-                // Add Wallet Button at bottom
-                SizedBox(
-                  width: double.infinity,
-                  child: OutlinedButton.icon(
-                    onPressed: () => _openAddWallet(context),
-                    style: OutlinedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      side: BorderSide(
-                        color: theme.colorScheme.primary.withValues(alpha: 0.5),
-                        width: 1.5,
-                      ),
-                    ),
-                    icon: const Icon(Icons.add_circle_outline),
-                    label: const Text(
-                      'Add Customizable Wallet',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 24),
-              ],
-            ),
-          );
-        },
+          },
+        ),
       ),
     );
   }
@@ -252,6 +263,7 @@ class _WalletsScreenState extends State<WalletsScreen> {
     required String currency,
   }) {
     final cardColor = Color(wallet.colorValue);
+    final l10n = AppLocalizations.of(context);
 
     return Container(
       width: double.infinity,
@@ -314,7 +326,7 @@ class _WalletsScreenState extends State<WalletsScreen> {
                 ),
                 const SizedBox(height: 12),
 
-                // Subtitle Row (e.g. Debit • PHP or 1.25% yearly)
+                // Subtitle Row
                 Text(
                   wallet.subtitle ?? 'Debit • PHP',
                   style: TextStyle(
@@ -327,7 +339,7 @@ class _WalletsScreenState extends State<WalletsScreen> {
 
                 // Bottom Row: Balance
                 Text(
-                  'BALANCE',
+                  l10n.balance.toUpperCase(),
                   style: TextStyle(
                     color: Colors.white.withValues(alpha: 0.65),
                     fontSize: 11,
@@ -336,8 +348,9 @@ class _WalletsScreenState extends State<WalletsScreen> {
                   ),
                 ),
                 const SizedBox(height: 2),
-                Text(
-                  '$currency${formatAmount(balance)}',
+                AnimatedCountText(
+                  value: balance,
+                  prefix: currency,
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 26,
@@ -381,6 +394,7 @@ class _WalletsScreenState extends State<WalletsScreen> {
   }
 
   void _showWalletActions(BuildContext context, Wallet wallet) {
+    final l10n = AppLocalizations.of(context);
     showModalBottomSheet(
       context: context,
       builder: (sheetCtx) => SafeArea(
@@ -388,7 +402,7 @@ class _WalletsScreenState extends State<WalletsScreen> {
           children: [
             ListTile(
               leading: const Icon(Icons.edit),
-              title: const Text('Edit Wallet Details'),
+              title: Text(l10n.editWallet),
               onTap: () {
                 Navigator.pop(sheetCtx);
                 _openEditWallet(context, wallet);
@@ -397,29 +411,29 @@ class _WalletsScreenState extends State<WalletsScreen> {
             if (!wallet.isDefault)
               ListTile(
                 leading: const Icon(Icons.delete, color: Colors.red),
-                title: const Text(
-                  'Delete Wallet',
-                  style: TextStyle(color: Colors.red),
+                title: Text(
+                  l10n.deleteWallet,
+                  style: const TextStyle(color: Colors.red),
                 ),
                 onTap: () async {
                   Navigator.pop(sheetCtx);
                   final confirm = await showDialog<bool>(
                     context: context,
                     builder: (_) => AlertDialog(
-                      title: Text('Delete "${wallet.name}"?'),
-                      content: const Text(
-                        'This also deletes every transaction recorded under this wallet. This cannot be undone.',
+                      title: Text(l10n.deleteWalletConfirmTitle(wallet.name)),
+                      content: Text(
+                        l10n.deleteWalletConfirmBody,
                       ),
                       actions: [
                         TextButton(
                           onPressed: () => Navigator.pop(context, false),
-                          child: const Text('Cancel'),
+                          child: Text(l10n.cancel),
                         ),
                         TextButton(
                           onPressed: () => Navigator.pop(context, true),
                           style: TextButton.styleFrom(
                               foregroundColor: Colors.red),
-                          child: const Text('Delete'),
+                          child: Text(l10n.delete),
                         ),
                       ],
                     ),

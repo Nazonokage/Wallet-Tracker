@@ -11,6 +11,9 @@ import '../widgets/transaction_list_item.dart';
 import '../widgets/income_modal.dart';
 import '../widgets/expense_modal.dart';
 import '../widgets/wallet_selector.dart';
+import '../widgets/particle_background.dart';
+import '../widgets/animated_count_text.dart';
+import '../widgets/fade_in_slide.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -39,132 +42,137 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     return Scaffold(
-      body: SafeArea(
-        child: Column(
-          children: [
-            const SizedBox(height: 8),
-            const WalletSelector(),
-            const SizedBox(height: 8),
-            _buildBalanceCard(context),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              child: TextField(
-                decoration: InputDecoration(
-                  hintText: l10n.searchByRemark,
-                  prefixIcon: const Icon(Icons.search),
-                  border: const OutlineInputBorder(
-                    borderRadius: BorderRadius.all(Radius.circular(30)),
+      body: ParticleBackground(
+        child: SafeArea(
+          child: Column(
+            children: [
+              const SizedBox(height: 8),
+              const WalletSelector(),
+              const SizedBox(height: 8),
+              _buildBalanceCard(context),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                child: TextField(
+                  decoration: InputDecoration(
+                    hintText: l10n.searchByRemark,
+                    prefixIcon: const Icon(Icons.search),
+                    border: const OutlineInputBorder(
+                      borderRadius: BorderRadius.all(Radius.circular(30)),
+                    ),
                   ),
+                  onChanged: (val) {
+                    Provider.of<TransactionProvider>(context, listen: false)
+                        .searchQuery = val;
+                  },
                 ),
-                onChanged: (val) {
-                  Provider.of<TransactionProvider>(context, listen: false)
-                      .searchQuery = val;
-                },
               ),
-            ),
-            Expanded(
-              child: Consumer<TransactionProvider>(
-                builder: (ctx, provider, _) {
-                  final list = provider.filteredTransactions;
-                  if (list.isEmpty) {
-                    return Center(
-                      child: Text(l10n.noTransactionsYet),
-                    );
-                  }
-                  return ListView.builder(
-                    itemCount: list.length,
-                    itemBuilder: (ctx, index) {
-                      final txn = list[index];
-                      return Dismissible(
-                        key: Key(txn.id.toString()),
-                        direction: DismissDirection.horizontal,
-                        confirmDismiss: (direction) async {
-                          if (direction == DismissDirection.endToStart) {
-                            final confirm = await showDialog<bool>(
-                              context: context,
-                              builder: (_) => AlertDialog(
-                                title: Text(l10n.deleteTransaction),
-                                content: Text(l10n.deleteTransactionBody),
-                                actions: [
-                                  TextButton(
-                                    onPressed: () =>
-                                        Navigator.pop(context, false),
-                                    child: Text(l10n.cancel),
+              Expanded(
+                child: Consumer<TransactionProvider>(
+                  builder: (ctx, provider, _) {
+                    final list = provider.filteredTransactions;
+                    if (list.isEmpty) {
+                      return Center(
+                        child: Text(l10n.noTransactionsYet),
+                      );
+                    }
+                    return ListView.builder(
+                      itemCount: list.length,
+                      itemBuilder: (ctx, index) {
+                        final txn = list[index];
+                        return FadeInSlide(
+                          delayMilliseconds: (index * 40).clamp(0, 300),
+                          child: Dismissible(
+                            key: Key(txn.id.toString()),
+                            direction: DismissDirection.horizontal,
+                            confirmDismiss: (direction) async {
+                              if (direction == DismissDirection.endToStart) {
+                                final confirm = await showDialog<bool>(
+                                  context: context,
+                                  builder: (_) => AlertDialog(
+                                    title: Text(l10n.deleteTransaction),
+                                    content: Text(l10n.deleteTransactionBody),
+                                    actions: [
+                                      TextButton(
+                                        onPressed: () =>
+                                            Navigator.pop(context, false),
+                                        child: Text(l10n.cancel),
+                                      ),
+                                      TextButton(
+                                        onPressed: () =>
+                                            Navigator.pop(context, true),
+                                        style: TextButton.styleFrom(
+                                          foregroundColor: Colors.red,
+                                        ),
+                                        child: Text(l10n.delete),
+                                      ),
+                                    ],
                                   ),
-                                  TextButton(
-                                    onPressed: () =>
-                                        Navigator.pop(context, true),
-                                    style: TextButton.styleFrom(
-                                      foregroundColor: Colors.red,
+                                );
+                                if (confirm == true) {
+                                  provider.softDelete(txn.id!);
+                                  if (!context.mounted) return true;
+                                  _showUndoSnackBar(context);
+                                  return true;
+                                } else {
+                                  return false;
+                                }
+                              } else {
+                                WidgetsBinding.instance.addPostFrameCallback((_) {
+                                  if (mounted) _openEditModal(context, txn);
+                                });
+                                return false;
+                              }
+                            },
+                            background: Container(
+                              color: Colors.green,
+                              alignment: Alignment.centerLeft,
+                              padding: const EdgeInsets.only(left: 24),
+                              child: const Row(
+                                mainAxisAlignment: MainAxisAlignment.start,
+                                children: [
+                                  Icon(Icons.edit, color: Colors.white),
+                                  SizedBox(width: 8),
+                                  Text(
+                                    'Edit',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold,
                                     ),
-                                    child: Text(l10n.delete),
                                   ),
                                 ],
                               ),
-                            );
-                            if (confirm == true) {
-                              provider.softDelete(txn.id!);
-                              if (!context.mounted) return true;
-                              _showUndoSnackBar(context);
-                              return true;
-                            } else {
-                              return false;
-                            }
-                          } else {
-                            WidgetsBinding.instance.addPostFrameCallback((_) {
-                              if (mounted) _openEditModal(context, txn);
-                            });
-                            return false;
-                          }
-                        },
-                        background: Container(
-                          color: Colors.green,
-                          alignment: Alignment.centerLeft,
-                          padding: const EdgeInsets.only(left: 24),
-                          child: const Row(
-                            mainAxisAlignment: MainAxisAlignment.start,
-                            children: [
-                              Icon(Icons.edit, color: Colors.white),
-                              SizedBox(width: 8),
-                              Text(
-                                'Edit',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                ),
+                            ),
+                            secondaryBackground: Container(
+                              color: Colors.orange,
+                              alignment: Alignment.centerRight,
+                              padding: const EdgeInsets.only(right: 24),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.end,
+                                children: [
+                                  Text(
+                                    l10n.delete,
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  const Icon(Icons.delete, color: Colors.white),
+                                ],
                               ),
-                            ],
+                            ),
+                            child: TransactionListItem(txn: txn),
                           ),
-                        ),
-                        secondaryBackground: Container(
-                          color: Colors.orange,
-                          alignment: Alignment.centerRight,
-                          padding: const EdgeInsets.only(right: 24),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.end,
-                            children: [
-                              Text(
-                                l10n.delete,
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              const Icon(Icons.delete, color: Colors.white),
-                            ],
-                          ),
-                        ),
-                        child: TransactionListItem(txn: txn),
-                      );
-                    },
-                  );
-                },
+                        );
+                      },
+                    );
+                  },
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
       floatingActionButton: Column(
@@ -213,10 +221,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
             child: Column(
               children: [
                 Text(label, style: const TextStyle(fontSize: 18)),
-                Text(
-                  '$currency${formatAmount(balance)}',
+                AnimatedCountText(
+                  value: balance,
+                  prefix: currency,
                   style: const TextStyle(
-                      fontSize: 32, fontWeight: FontWeight.bold),
+                    fontSize: 32,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
                 const SizedBox(height: 8),
                 Text(

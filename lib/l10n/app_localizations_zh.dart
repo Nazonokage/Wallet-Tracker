@@ -229,4 +229,88 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get portuguese => 'Português';
+
+  @override
+  String get walletsAndSavings => '钱包与储蓄';
+
+  @override
+  String get totalNetWorth => '总净资产';
+
+  @override
+  String get defaultWallet => '默认钱包';
+
+  @override
+  String get analyticsAndTrends => '分析与趋势';
+
+  @override
+  String get noExpensesPeriod => '该时间段内暂无支出';
+
+  @override
+  String get categoryBreakdown => '类别明细';
+
+  @override
+  String get spends => '笔支出';
+
+  @override
+  String get helpAndUserGuide => '帮助与用户指南';
+
+  @override
+  String get helpSubtitle => '划动手势、钱包指南与技巧';
+
+  @override
+  String get allTime => '所有时间';
+
+  @override
+  String get today => '今天';
+
+  @override
+  String get thisMonth => '本月';
+
+  @override
+  String get calendar => '日历';
+
+  @override
+  String get savings => '储蓄';
+
+  @override
+  String get digitalWallet => '电子钱包';
+
+  @override
+  String get bankAccount => '银行账户';
+
+  @override
+  String get card => '卡';
+
+  @override
+  String get cash => '现金';
+
+  @override
+  String get exportData => '导出数据';
+
+  @override
+  String get importData => '导入数据';
+
+  @override
+  String get exportImportSubtitle => 'CSV 或 Excel (.xlsx)';
+
+  @override
+  String get totalExpense => '总支出';
+
+  @override
+  String get pickSingleDay => '选择特定单日';
+
+  @override
+  String get pickCustomDateRange => '选择自定义日期范围';
+
+  @override
+  String get noWalletsFound => '未找到钱包';
+
+  @override
+  String get addYourFirstWallet => '添加你的第一个钱包';
+
+  @override
+  String get accounts => '账户';
+
+  @override
+  String get addCustomizableWallet => '添加自定义钱包';
 }

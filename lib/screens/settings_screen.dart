@@ -10,16 +10,38 @@ import '../db/database_helper.dart';
 import '../utils/import_export_helper.dart';
 import 'package:expense_tracker/l10n/app_localizations.dart';
 
+import '../widgets/help_guide_modal.dart';
+
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
     final settings = Provider.of<SettingsProvider>(context);
+    final l10n = AppLocalizations.of(context);
     return Scaffold(
-      appBar: AppBar(title: Text(AppLocalizations.of(context).settings)),
+      appBar: AppBar(
+        title: Text(l10n.settings),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.help_outline_rounded),
+            tooltip: l10n.helpAndUserGuide,
+            onPressed: () => HelpGuideModal.show(context),
+          ),
+        ],
+      ),
       body: ListView(
         children: [
+          // Help & User Guide Tile
+          ListTile(
+            leading: const Icon(Icons.menu_book_rounded, color: Colors.amber),
+            title: Text(l10n.helpAndUserGuide, style: const TextStyle(fontWeight: FontWeight.bold)),
+            subtitle: Text(l10n.helpSubtitle),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => HelpGuideModal.show(context),
+          ),
+          const Divider(),
+
           // Region = language + currency (with flags)
           ListTile(
             title: Text(AppLocalizations.of(context).language),
@@ -73,23 +95,23 @@ class SettingsScreen extends StatelessWidget {
 
           // Clear all data
           ListTile(
-            title: const Text('Clear All Data'),
+            title: Text(l10n.clearAllData),
             trailing: const Icon(Icons.delete_forever, color: Colors.red),
             onTap: () => _confirmClearData(context),
           ),
 
           // Export
           ListTile(
-            title: const Text('Export Data'),
-            subtitle: const Text('CSV or Excel (.xlsx)'),
+            title: Text(l10n.exportData),
+            subtitle: Text(l10n.exportImportSubtitle),
             trailing: const Icon(Icons.upload_file),
             onTap: () => _showExportOptions(context),
           ),
 
           // Import
           ListTile(
-            title: const Text('Import Data'),
-            subtitle: const Text('CSV or Excel (.xlsx)'),
+            title: Text(l10n.importData),
+            subtitle: Text(l10n.exportImportSubtitle),
             trailing: const Icon(Icons.download),
             onTap: () => _importData(context),
           ),

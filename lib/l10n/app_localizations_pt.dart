@@ -233,4 +233,88 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get portuguese => 'Português';
+
+  @override
+  String get walletsAndSavings => 'Carteiras e Poupanças';
+
+  @override
+  String get totalNetWorth => 'Patrimônio Total';
+
+  @override
+  String get defaultWallet => 'Carteira Padrão';
+
+  @override
+  String get analyticsAndTrends => 'Análises e Tendências';
+
+  @override
+  String get noExpensesPeriod => 'Nenhuma despesa neste período';
+
+  @override
+  String get categoryBreakdown => 'Detalhamento por Categoria';
+
+  @override
+  String get spends => 'Despesas';
+
+  @override
+  String get helpAndUserGuide => 'Ajuda e Guia do Usuário';
+
+  @override
+  String get helpSubtitle => 'Gestos de deslizar, guias e dicas';
+
+  @override
+  String get allTime => 'Todo o período';
+
+  @override
+  String get today => 'Hoje';
+
+  @override
+  String get thisMonth => 'Este Mês';
+
+  @override
+  String get calendar => 'Calendário';
+
+  @override
+  String get savings => 'Poupança';
+
+  @override
+  String get digitalWallet => 'Carteira Digital';
+
+  @override
+  String get bankAccount => 'Conta Bancária';
+
+  @override
+  String get card => 'Cartão';
+
+  @override
+  String get cash => 'Dinheiro';
+
+  @override
+  String get exportData => 'Exportar Dados';
+
+  @override
+  String get importData => 'Importar Dados';
+
+  @override
+  String get exportImportSubtitle => 'CSV ou Excel (.xlsx)';
+
+  @override
+  String get totalExpense => 'Despesa Total';
+
+  @override
+  String get pickSingleDay => 'Escolher Dia Específico';
+
+  @override
+  String get pickCustomDateRange => 'Intervalo de Datas Personalizado';
+
+  @override
+  String get noWalletsFound => 'Nenhuma carteira encontrada';
+
+  @override
+  String get addYourFirstWallet => 'Adicione sua primeira carteira';
+
+  @override
+  String get accounts => 'Contas';
+
+  @override
+  String get addCustomizableWallet => 'Adicionar Carteira Personalizável';
 }

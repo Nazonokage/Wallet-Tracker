@@ -232,4 +232,88 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get portuguese => 'Português';
+
+  @override
+  String get walletsAndSavings => 'Wallets & Savings';
+
+  @override
+  String get totalNetWorth => 'Total Net Worth';
+
+  @override
+  String get defaultWallet => 'Default Wallet';
+
+  @override
+  String get analyticsAndTrends => 'Analytics & Trends';
+
+  @override
+  String get noExpensesPeriod => 'No expenses found for this period';
+
+  @override
+  String get categoryBreakdown => 'Category Breakdown';
+
+  @override
+  String get spends => 'Spends';
+
+  @override
+  String get helpAndUserGuide => 'Help & User Guide';
+
+  @override
+  String get helpSubtitle => 'Swipe gestures, wallet guides & tips';
+
+  @override
+  String get allTime => 'All Time';
+
+  @override
+  String get today => 'Today';
+
+  @override
+  String get thisMonth => 'This Month';
+
+  @override
+  String get calendar => 'Calendar';
+
+  @override
+  String get savings => 'Savings';
+
+  @override
+  String get digitalWallet => 'Digital Wallet';
+
+  @override
+  String get bankAccount => 'Bank Account';
+
+  @override
+  String get card => 'Card';
+
+  @override
+  String get cash => 'Cash';
+
+  @override
+  String get exportData => 'Export Data';
+
+  @override
+  String get importData => 'Import Data';
+
+  @override
+  String get exportImportSubtitle => 'CSV or Excel (.xlsx)';
+
+  @override
+  String get totalExpense => 'Total Expense';
+
+  @override
+  String get pickSingleDay => 'Pick Specific Single Day';
+
+  @override
+  String get pickCustomDateRange => 'Pick Custom Date Range';
+
+  @override
+  String get noWalletsFound => 'No wallets found';
+
+  @override
+  String get addYourFirstWallet => 'Add your first wallet';
+
+  @override
+  String get accounts => 'Accounts';
+
+  @override
+  String get addCustomizableWallet => 'Add Customizable Wallet';
 }

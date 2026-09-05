@@ -234,4 +234,88 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get portuguese => 'Português';
+
+  @override
+  String get walletsAndSavings => 'Billeteras y Ahorros';
+
+  @override
+  String get totalNetWorth => 'Patrimonio Total';
+
+  @override
+  String get defaultWallet => 'Billetera Principal';
+
+  @override
+  String get analyticsAndTrends => 'Análisis y Tendencias';
+
+  @override
+  String get noExpensesPeriod => 'Sin gastos en este período';
+
+  @override
+  String get categoryBreakdown => 'Desglose por Categoría';
+
+  @override
+  String get spends => 'Gastos';
+
+  @override
+  String get helpAndUserGuide => 'Ayuda y Guía de Usuario';
+
+  @override
+  String get helpSubtitle => 'Gestos para deslizar, guías y consejos';
+
+  @override
+  String get allTime => 'Todo el tiempo';
+
+  @override
+  String get today => 'Hoy';
+
+  @override
+  String get thisMonth => 'Este Mes';
+
+  @override
+  String get calendar => 'Calendario';
+
+  @override
+  String get savings => 'Ahorros';
+
+  @override
+  String get digitalWallet => 'Billetera Digital';
+
+  @override
+  String get bankAccount => 'Cuenta Bancaria';
+
+  @override
+  String get card => 'Tarjeta';
+
+  @override
+  String get cash => 'Efectivo';
+
+  @override
+  String get exportData => 'Exportar Datos';
+
+  @override
+  String get importData => 'Importar Datos';
+
+  @override
+  String get exportImportSubtitle => 'CSV o Excel (.xlsx)';
+
+  @override
+  String get totalExpense => 'Gasto Total';
+
+  @override
+  String get pickSingleDay => 'Seleccionar Día Específico';
+
+  @override
+  String get pickCustomDateRange => 'Rango de Fechas Personalizado';
+
+  @override
+  String get noWalletsFound => 'No se encontraron billeteras';
+
+  @override
+  String get addYourFirstWallet => 'Agrega tu primera billetera';
+
+  @override
+  String get accounts => 'Cuentas';
+
+  @override
+  String get addCustomizableWallet => 'Agregar Billetera Personalizada';
 }
