@@ -9,6 +9,9 @@ class Wallet {
   String icon; // emoji, e.g. '🏦', '💳'
   double initialBalance;
   DateTime createdAt;
+  String category; // e.g. 'Bank Accounts', 'E-wallets', 'Savings & Investments', 'Cash', 'Other'
+  int colorValue; // ARGB int, e.g. 0xFF1976D2
+  String? subtitle; // e.g. 'Debit • PHP', '1.25% yearly'
 
   Wallet({
     this.id,
@@ -16,6 +19,9 @@ class Wallet {
     this.icon = '👛',
     this.initialBalance = 0,
     DateTime? createdAt,
+    this.category = 'Bank Accounts',
+    this.colorValue = 0xFF1976D2,
+    this.subtitle,
   }) : createdAt = createdAt ?? DateTime.now();
 
   bool get isDefault => id == cashWalletId;
@@ -27,6 +33,9 @@ class Wallet {
       'icon': icon,
       'initialBalance': initialBalance,
       'createdAt': createdAt.toIso8601String(),
+      'category': category,
+      'colorValue': colorValue,
+      'subtitle': subtitle,
     };
   }
 
@@ -37,6 +46,9 @@ class Wallet {
       icon: map['icon'] ?? '👛',
       initialBalance: (map['initialBalance'] as num).toDouble(),
       createdAt: DateTime.parse(map['createdAt']),
+      category: map['category'] ?? 'Bank Accounts',
+      colorValue: map['colorValue'] != null ? (map['colorValue'] as int) : 0xFF1976D2,
+      subtitle: map['subtitle'],
     );
   }
 }

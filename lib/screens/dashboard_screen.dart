@@ -21,6 +21,21 @@ class DashboardScreen extends StatefulWidget {
 
 class _DashboardScreenState extends State<DashboardScreen> {
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final walletProvider = context.read<WalletProvider>();
+      final txnProvider = context.read<TransactionProvider>();
+      if (walletProvider.selectedWalletId == null) {
+        walletProvider.selectWallet(Wallet.cashWalletId);
+      }
+      txnProvider.walletFilter =
+          walletProvider.selectedWalletId ?? Wallet.cashWalletId;
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     return Scaffold(
@@ -166,7 +181,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           FloatingActionButton(
             heroTag: 'expense',
             onPressed: () => _openExpenseModal(context),
-            backgroundColor: Colors.red,
+            backgroundColor: const Color(0xFFD32F2F),
             child: const Icon(Icons.remove),
           ),
         ],

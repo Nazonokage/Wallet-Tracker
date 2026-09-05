@@ -11,8 +11,6 @@ import '../widgets/amount_text_field.dart';
 class ExpenseModal extends StatefulWidget {
   final Transaction? initialTransaction;
   final Function(Transaction) onSave;
-  // ✅ Which wallet this should default to (e.g. whatever's selected on
-  // the dashboard). Falls back to Cash if omitted.
   final int? defaultWalletId;
 
   const ExpenseModal({
@@ -26,9 +24,8 @@ class ExpenseModal extends StatefulWidget {
   State<ExpenseModal> createState() => _ExpenseModalState();
 }
 
-class _ExpenseModalState extends State<ExpenseModal>
-    with SingleTickerProviderStateMixin {
-  late TabController _tabController;
+class _ExpenseModalState extends State<ExpenseModal> {
+  int _currentTab = 0; // 0: Direct, 1: Change Calculator
   final _amountController = TextEditingController();
   final _remarkController = TextEditingController();
   Category _selectedCategory = Category.others;
@@ -37,22 +34,19 @@ class _ExpenseModalState extends State<ExpenseModal>
   final _cashGivenController = TextEditingController();
   final _cashReceivedController = TextEditingController();
 
+  static const Color _expenseAccent = Color(0xFFD32F2F);
+
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
-    // ✅ AmountTextField doesn't expose onChanged, so listen on the
-    // controllers directly to keep the computed amount live.
     _cashGivenController.addListener(_calculateFromChange);
     _cashReceivedController.addListener(_calculateFromChange);
-    // ✅ Editing keeps the transaction's original wallet; new transactions
-    // default to whatever wallet was passed in (falls back to Cash).
     _selectedWalletId = widget.initialTransaction?.walletId ??
         widget.defaultWalletId ??
         Wallet.cashWalletId;
+
     if (widget.initialTransaction != null) {
       final raw = widget.initialTransaction!.amount;
-      // ✅ Format with commas on load
       _amountController.text = formatAmount(raw);
       _remarkController.text = widget.initialTransaction!.remark ?? '';
       _selectedCategory =
@@ -64,7 +58,6 @@ class _ExpenseModalState extends State<ExpenseModal>
   void dispose() {
     _cashGivenController.removeListener(_calculateFromChange);
     _cashReceivedController.removeListener(_calculateFromChange);
-    _tabController.dispose();
     _amountController.dispose();
     _remarkController.dispose();
     _cashGivenController.dispose();
@@ -73,8 +66,6 @@ class _ExpenseModalState extends State<ExpenseModal>
   }
 
   void _calculateFromChange() {
-    // ✅ Use parseAmount so commas from the AmountTextField formatting
-    // don't break the parse (double.tryParse chokes on "6,464,646").
     final given = parseAmount(_cashGivenController.text) ?? 0;
     final received = parseAmount(_cashReceivedController.text) ?? 0;
     final spent = given - received;
@@ -82,26 +73,22 @@ class _ExpenseModalState extends State<ExpenseModal>
     setState(() {});
   }
 
-  /// Realistic "are you sure?" thresholds by category.
-  /// Commute is excluded (frequent small daily spends).
-  /// Thresholds are soft / realistic patterns, not hard budgets.
   double? _largeSpendThreshold(Category category) {
     switch (category) {
       case Category.food:
-        return 100.0; // typical meal is well under this
+        return 100.0;
       case Category.bills:
-        return 2000.0; // rent / utilities / big bills
+        return 2000.0;
       case Category.shopping:
         return 500.0;
       case Category.others:
         return 300.0;
       case Category.commute:
-        return null; // never warn
+        return null;
     }
   }
 
   Future<void> _save() async {
-    // ✅ Use parseAmount directly
     final rawAmount = parseAmount(_amountController.text);
     if (rawAmount == null || rawAmount <= 0) return;
 
@@ -129,7 +116,7 @@ class _ExpenseModalState extends State<ExpenseModal>
             ),
             TextButton(
               onPressed: () => Navigator.pop(ctx, true),
-              style: TextButton.styleFrom(foregroundColor: Colors.red),
+              style: TextButton.styleFrom(foregroundColor: _expenseAccent),
               child: Text(l10n.yesSpendIt),
             ),
           ],
@@ -157,7 +144,6 @@ class _ExpenseModalState extends State<ExpenseModal>
     return Consumer<WalletProvider>(
       builder: (ctx, walletProvider, _) {
         final wallets = walletProvider.wallets;
-        // Guard against the selected wallet having just been deleted.
         final validId = wallets.any((w) => w.id == _selectedWalletId)
             ? _selectedWalletId
             : Wallet.cashWalletId;
@@ -182,8 +168,8 @@ class _ExpenseModalState extends State<ExpenseModal>
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(
-                color: theme.colorScheme.primary,
+              borderSide: const BorderSide(
+                color: _expenseAccent,
                 width: 2,
               ),
             ),
@@ -201,15 +187,18 @@ class _ExpenseModalState extends State<ExpenseModal>
   Widget build(BuildContext context) {
     final currency = Provider.of<SettingsProvider>(context).currencySymbol;
     final theme = Theme.of(context);
+    final bottomInset = MediaQuery.of(context).viewInsets.bottom;
+
     return Padding(
-      padding: const EdgeInsets.all(20),
+      padding: EdgeInsets.fromLTRB(20, 20, 20, 20 + bottomInset),
       child: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
-                Icon(Icons.remove_circle_outline, color: Colors.red.shade400),
+                const Icon(Icons.remove_circle_outline, color: _expenseAccent),
                 const SizedBox(width: 8),
                 Text(
                   widget.initialTransaction == null
@@ -221,43 +210,83 @@ class _ExpenseModalState extends State<ExpenseModal>
               ],
             ),
             const SizedBox(height: 16),
+
+            // Tab Selector (Direct vs Change Calculator)
             Container(
               decoration: BoxDecoration(
                 color: theme.colorScheme.surfaceContainerHighest,
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: TabBar(
-                controller: _tabController,
-                indicator: BoxDecoration(
-                  color: theme.colorScheme.primaryContainer,
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                indicatorSize: TabBarIndicatorSize.tab,
-                labelColor: theme.colorScheme.onPrimaryContainer,
-                unselectedLabelColor: theme.colorScheme.onSurfaceVariant,
-                tabs: [
-                  Tab(text: AppLocalizations.of(context).direct),
-                  Tab(text: AppLocalizations.of(context).changeCalculator),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: GestureDetector(
+                      onTap: () => setState(() => _currentTab = 0),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(vertical: 10),
+                        decoration: BoxDecoration(
+                          color: _currentTab == 0
+                              ? _expenseAccent
+                              : Colors.transparent,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        alignment: Alignment.center,
+                        child: Text(
+                          AppLocalizations.of(context).direct,
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: _currentTab == 0
+                                ? Colors.white
+                                : theme.colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  Expanded(
+                    child: GestureDetector(
+                      onTap: () => setState(() => _currentTab = 1),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(vertical: 10),
+                        decoration: BoxDecoration(
+                          color: _currentTab == 1
+                              ? _expenseAccent
+                              : Colors.transparent,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        alignment: Alignment.center,
+                        child: Text(
+                          AppLocalizations.of(context).changeCalculator,
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: _currentTab == 1
+                                ? Colors.white
+                                : theme.colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
                 ],
               ),
             ),
             const SizedBox(height: 16),
-            SizedBox(
-              height: 420, // was 320
-              child: TabBarView(
-                controller: _tabController,
-                children: [
-                  _buildDirectTab(currency, theme),
-                  _buildCalculatorTab(currency, theme),
-                ],
-              ),
-            ),
+
+            // Tab Content
+            _currentTab == 0
+                ? _buildDirectTab(currency, theme)
+                : _buildCalculatorTab(currency, theme),
+
             const SizedBox(height: 20),
+
+            // Save Button
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
                 onPressed: _save,
                 style: ElevatedButton.styleFrom(
+                  backgroundColor: _expenseAccent,
+                  foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(14),
@@ -270,7 +299,6 @@ class _ExpenseModalState extends State<ExpenseModal>
                 ),
               ),
             ),
-            const SizedBox(height: 8),
           ],
         ),
       ),
@@ -280,6 +308,7 @@ class _ExpenseModalState extends State<ExpenseModal>
   Widget _buildDirectTab(String currency, ThemeData theme) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
       children: [
         AmountTextField(
           controller: _amountController,
@@ -305,8 +334,8 @@ class _ExpenseModalState extends State<ExpenseModal>
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(
-                color: theme.colorScheme.primary,
+              borderSide: const BorderSide(
+                color: _expenseAccent,
                 width: 2,
               ),
             ),
@@ -326,6 +355,7 @@ class _ExpenseModalState extends State<ExpenseModal>
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
       children: [
         AmountTextField(
           controller: _cashGivenController,
@@ -342,10 +372,10 @@ class _ExpenseModalState extends State<ExpenseModal>
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           decoration: BoxDecoration(
-            color: theme.colorScheme.primaryContainer.withValues(alpha: 0.3),
+            color: _expenseAccent.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: theme.colorScheme.primary.withValues(alpha: 0.2),
+              color: _expenseAccent.withValues(alpha: 0.3),
             ),
           ),
           child: Row(
@@ -388,8 +418,8 @@ class _ExpenseModalState extends State<ExpenseModal>
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(
-                color: theme.colorScheme.primary,
+              borderSide: const BorderSide(
+                color: _expenseAccent,
                 width: 2,
               ),
             ),
@@ -426,8 +456,8 @@ class _ExpenseModalState extends State<ExpenseModal>
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(
-            color: theme.colorScheme.primary,
+          borderSide: const BorderSide(
+            color: _expenseAccent,
             width: 2,
           ),
         ),

@@ -8,7 +8,7 @@ class WalletProvider extends ChangeNotifier {
 
   List<Wallet> _wallets = [];
 
-  int? _selectedWalletId;
+  int? _selectedWalletId = Wallet.cashWalletId;
 
   bool _isLoading = false;
 
@@ -72,11 +72,10 @@ class WalletProvider extends ChangeNotifier {
 
       _wallets = wallets;
 
-      // If the previously selected wallet no longer exists,
-      // automatically switch back to "All wallets".
-      if (_selectedWalletId != null &&
+      // Always ensure Cash wallet (id 1) is selected by default if none selected or missing.
+      if (_selectedWalletId == null ||
           !_wallets.any((wallet) => wallet.id == _selectedWalletId)) {
-        _selectedWalletId = null;
+        _selectedWalletId = Wallet.cashWalletId;
       }
     } catch (e) {
       _setError('Failed to load wallets: $e');

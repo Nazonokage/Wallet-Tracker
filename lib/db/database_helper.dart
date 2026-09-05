@@ -22,7 +22,7 @@ class DatabaseHelper {
     final path = join(directory.path, 'expense_tracker.db');
     return await sql.openDatabase(
       path,
-      version: 2, // ✅ bumped: version 2 adds multi-wallet support
+      version: 3, // ✅ bumped: version 3 adds customizable wallet fields (category, color, subtitle)
       onCreate: _onCreate,
       onUpgrade: _onUpgrade,
     );
@@ -35,17 +35,22 @@ class DatabaseHelper {
         name TEXT NOT NULL,
         icon TEXT NOT NULL DEFAULT '👛',
         initialBalance REAL NOT NULL DEFAULT 0,
-        createdAt TEXT NOT NULL
+        createdAt TEXT NOT NULL,
+        category TEXT NOT NULL DEFAULT 'Bank Accounts',
+        colorValue INTEGER NOT NULL DEFAULT 4280391411,
+        subtitle TEXT
       )
     ''');
-    // ✅ Seed the default "Cash" wallet at id 1. Every transaction defaults
-    // to this wallet_id, so nothing is ever left without a home.
+    // ✅ Seed the default "Cash" wallet at id 1.
     await db.insert('wallets', {
       'id': Wallet.cashWalletId,
       'name': 'Cash',
       'icon': '💵',
       'initialBalance': 0.0,
       'createdAt': DateTime.now().toIso8601String(),
+      'category': 'Cash',
+      'colorValue': 0xFF388E3C,
+      'subtitle': 'Physical Cash',
     });
     await db.execute('''
       CREATE TABLE transactions (
@@ -66,9 +71,6 @@ class DatabaseHelper {
     int newVersion,
   ) async {
     if (oldVersion < 2) {
-      // ✅ Migrating an install that predates wallets: add the table,
-      // seed "Cash", and tag every existing transaction as belonging to it
-      // via the column default, so nobody's history disappears.
       await db.execute('''
         CREATE TABLE IF NOT EXISTS wallets (
           id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -101,6 +103,38 @@ class DatabaseHelper {
           'ALTER TABLE transactions ADD COLUMN wallet_id INTEGER NOT NULL DEFAULT ${Wallet.cashWalletId}',
         );
       }
+    }
+
+    if (oldVersion < 3) {
+      final columns = await db.rawQuery('PRAGMA table_info(wallets)');
+      final hasCategory = columns.any((c) => c['name'] == 'category');
+      if (!hasCategory) {
+        await db.execute(
+          "ALTER TABLE wallets ADD COLUMN category TEXT NOT NULL DEFAULT 'Bank Accounts'",
+        );
+      }
+      final hasColorValue = columns.any((c) => c['name'] == 'colorValue');
+      if (!hasColorValue) {
+        await db.execute(
+          'ALTER TABLE wallets ADD COLUMN colorValue INTEGER NOT NULL DEFAULT 4280391411',
+        );
+      }
+      final hasSubtitle = columns.any((c) => c['name'] == 'subtitle');
+      if (!hasSubtitle) {
+        await db.execute('ALTER TABLE wallets ADD COLUMN subtitle TEXT');
+      }
+
+      // Update default Cash wallet category & color if it exists
+      await db.update(
+        'wallets',
+        {
+          'category': 'Cash',
+          'colorValue': 0xFF388E3C,
+          'subtitle': 'Physical Cash',
+        },
+        where: 'id = ?',
+        whereArgs: [Wallet.cashWalletId],
+      );
     }
   }
 

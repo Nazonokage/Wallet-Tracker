@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../models/wallet.dart';
 import '../providers/wallet_provider.dart';
 import '../providers/transaction_provider.dart';
+import 'wallet_logo.dart';
 import 'package:expense_tracker/l10n/app_localizations.dart';
 
 class WalletSelector extends StatelessWidget {
@@ -21,7 +22,8 @@ class WalletSelector extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 16),
             children: [
               ChoiceChip(
-                label: Text('💰 ${AppLocalizations.of(context).allWallets}'),
+                avatar: const Icon(Icons.wallet, size: 18),
+                label: Text(AppLocalizations.of(context).allWallets),
                 selected: walletProvider.selectedWalletId == null,
                 onSelected: (_) => _selectWallet(context, null),
               ),
@@ -31,7 +33,12 @@ class WalletSelector extends StatelessWidget {
                   onLongPress:
                       w.isDefault ? null : () => _showWalletActions(context, w),
                   child: ChoiceChip(
-                    label: Text('${w.icon} ${w.name}'),
+                    avatar: WalletLogoWidget(
+                      name: w.name,
+                      fallbackIcon: w.icon,
+                      size: 20,
+                    ),
+                    label: Text(w.name),
                     selected: walletProvider.selectedWalletId == w.id,
                     onSelected: (_) => _selectWallet(context, w.id),
                   ),

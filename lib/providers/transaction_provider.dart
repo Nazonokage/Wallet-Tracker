@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/transaction.dart';
+import '../models/wallet.dart';
 import '../db/database_helper.dart';
 
 class TransactionProvider extends ChangeNotifier {
@@ -22,8 +23,8 @@ class TransactionProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  // ✅ Optional wallet filter — null means "All wallets".
-  int? _walletFilter;
+  // ✅ Optional wallet filter — defaults to Cash (id 1).
+  int? _walletFilter = Wallet.cashWalletId;
   int? get walletFilter => _walletFilter;
   set walletFilter(int? val) {
     _walletFilter = val;
@@ -114,6 +115,20 @@ class TransactionProvider extends ChangeNotifier {
       // also re-insert into DB?
       // We'll handle in UI: after undo, we call addTransaction again.
     }
+  }
+
+  double netBalanceForWallet(int walletId) {
+    double income = 0, expense = 0;
+    for (var txn in _transactions) {
+      if (txn.walletId == walletId) {
+        if (txn.type == TransactionType.income) {
+          income += txn.amount;
+        } else {
+          expense += txn.amount;
+        }
+      }
+    }
+    return income - expense;
   }
 
   // Computed values (wallet-scoped)

@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import 'providers/transaction_provider.dart';
 import 'providers/settings_provider.dart';
 import 'screens/dashboard_screen.dart';
+import 'screens/wallets_screen.dart';
 import 'screens/analytics_screen.dart';
 import 'screens/settings_screen.dart';
 import 'providers/wallet_provider.dart';
@@ -47,19 +48,19 @@ class MyApp extends StatelessWidget {
     Color seed;
     switch (theme) {
       case AppTheme.mint:
-        seed = Colors.teal;
+        seed = const Color(0xFF00897B); // Emerald Mint
         break;
       case AppTheme.sunset:
-        seed = Colors.deepOrange;
+        seed = const Color(0xFFF57C00); // Amber Sunset
         break;
       case AppTheme.ocean:
-        seed = Colors.blue;
+        seed = const Color(0xFF1976D2); // Ocean Blue
         break;
       case AppTheme.lavender:
-        seed = const Color(0xFF9C7B9E);
+        seed = const Color(0xFF7B1FA2); // Royal Lavender
         break;
       case AppTheme.rose:
-        seed = const Color(0xFFE8A2A2);
+        seed = const Color(0xFFE91E63); // Rose Pink
         break;
     }
 
@@ -91,22 +92,34 @@ class MainScreen extends StatefulWidget {
 class _MainScreenState extends State<MainScreen> {
   int _selectedIndex = 0;
 
-  final List<Widget> _screens = const [
-    DashboardScreen(),
-    AnalyticsScreen(),
-    SettingsScreen(),
-  ];
+  void _navigateToDashboardWithWallet(int? walletId) {
+    context.read<WalletProvider>().selectWallet(walletId);
+    context.read<TransactionProvider>().walletFilter = walletId;
+    setState(() => _selectedIndex = 0);
+  }
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
+    final List<Widget> screens = [
+      const DashboardScreen(),
+      WalletsScreen(onWalletSelected: _navigateToDashboardWithWallet),
+      const AnalyticsScreen(),
+      const SettingsScreen(),
+    ];
+
     return Scaffold(
-      body: _screens[_selectedIndex],
+      body: screens[_selectedIndex],
       bottomNavigationBar: BottomNavigationBar(
+        type: BottomNavigationBarType.fixed,
         items: [
           BottomNavigationBarItem(
             icon: const Icon(Icons.home),
             label: l10n.dashboard,
+          ),
+          const BottomNavigationBarItem(
+            icon: Icon(Icons.account_balance_wallet),
+            label: 'Wallets',
           ),
           BottomNavigationBarItem(
             icon: const Icon(Icons.pie_chart),
