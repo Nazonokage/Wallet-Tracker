@@ -82,7 +82,8 @@ class ThousandsSeparatorInputFormatter extends TextInputFormatter {
     String significantBefore = cleanedBefore;
     final dotInBefore = significantBefore.indexOf('.');
     if (dotInBefore != -1) {
-      significantBefore = significantBefore.substring(0, dotInBefore + 1) +
+      significantBefore =
+          significantBefore.substring(0, dotInBefore + 1) +
           significantBefore.substring(dotInBefore + 1).replaceAll('.', '');
     }
 
@@ -129,6 +130,7 @@ class AmountTextField extends StatefulWidget {
   final String labelText;
   final String currencySymbol;
   final String? Function(String?)? validator;
+  final bool autofocus;
 
   const AmountTextField({
     super.key,
@@ -136,6 +138,7 @@ class AmountTextField extends StatefulWidget {
     required this.labelText,
     required this.currencySymbol,
     this.validator,
+    this.autofocus = false,
   });
 
   @override
@@ -184,6 +187,7 @@ class _AmountTextFieldState extends State<AmountTextField> {
     return TextField(
       controller: widget.controller,
       focusNode: _focusNode,
+      autofocus: widget.autofocus,
       decoration: InputDecoration(
         labelText: widget.labelText,
         prefixText: '${widget.currencySymbol} ',
@@ -194,8 +198,9 @@ class _AmountTextFieldState extends State<AmountTextField> {
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide:
-              BorderSide(color: Theme.of(context).colorScheme.outlineVariant),
+          borderSide: BorderSide(
+            color: Theme.of(context).colorScheme.outlineVariant,
+          ),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
@@ -206,8 +211,10 @@ class _AmountTextFieldState extends State<AmountTextField> {
         ),
         filled: true,
         fillColor: Theme.of(context).colorScheme.surfaceContainerHighest,
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 14,
+        ),
       ),
       keyboardType: const TextInputType.numberWithOptions(decimal: true),
       inputFormatters: [ThousandsSeparatorInputFormatter()],

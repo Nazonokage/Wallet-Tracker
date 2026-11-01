@@ -30,8 +30,9 @@ class WalletSelector extends StatelessWidget {
               const SizedBox(width: 8),
               for (final w in wallets) ...[
                 GestureDetector(
-                  onLongPress:
-                      w.isDefault ? null : () => _showWalletActions(context, w),
+                  onLongPress: w.isDefault
+                      ? null
+                      : () => _showWalletActions(context, w),
                   child: ChoiceChip(
                     avatar: WalletLogoWidget(
                       name: w.name,
@@ -106,15 +107,20 @@ class WalletSelector extends StatelessWidget {
             ),
             ListTile(
               leading: const Icon(Icons.delete, color: Colors.red),
-              title: Text(AppLocalizations.of(context).deleteWallet,
-                  style: const TextStyle(color: Colors.red)),
+              title: Text(
+                AppLocalizations.of(context).deleteWallet,
+                style: const TextStyle(color: Colors.red),
+              ),
               onTap: () async {
                 Navigator.pop(sheetCtx);
                 final confirm = await showDialog<bool>(
                   context: context,
                   builder: (_) => AlertDialog(
-                    title: Text(AppLocalizations.of(context)
-                        .deleteWalletConfirmTitle(wallet.name)),
+                    title: Text(
+                      AppLocalizations.of(
+                        context,
+                      ).deleteWalletConfirmTitle(wallet.name),
+                    ),
                     content: Text(
                       AppLocalizations.of(context).deleteWalletConfirmBody,
                     ),
@@ -125,16 +131,29 @@ class WalletSelector extends StatelessWidget {
                       ),
                       TextButton(
                         onPressed: () => Navigator.pop(context, true),
-                        style:
-                            TextButton.styleFrom(foregroundColor: Colors.red),
+                        style: TextButton.styleFrom(
+                          foregroundColor: Colors.red,
+                        ),
                         child: Text(AppLocalizations.of(context).delete),
                       ),
                     ],
                   ),
                 );
                 if (confirm == true && context.mounted) {
-                  await context.read<WalletProvider>().deleteWallet(wallet.id!);
+                  final deleted = await context
+                      .read<WalletProvider>()
+                      .deleteWallet(wallet.id!);
                   if (!context.mounted) return;
+                  if (!deleted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          AppLocalizations.of(context).debtWalletInUse,
+                        ),
+                      ),
+                    );
+                    return;
+                  }
                   context
                       .read<TransactionProvider>()
                       .removeTransactionsForWallet(wallet.id!);

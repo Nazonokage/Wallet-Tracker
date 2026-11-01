@@ -8,12 +8,15 @@ import '../providers/wallet_provider.dart';
 import '../models/transaction.dart';
 import '../models/wallet.dart';
 import '../widgets/transaction_list_item.dart';
+import '../widgets/transaction_details.dart';
+import '../db/debt_store.dart';
 import '../widgets/income_modal.dart';
 import '../widgets/expense_modal.dart';
 import '../widgets/wallet_selector.dart';
 import '../widgets/particle_background.dart';
 import '../widgets/animated_count_text.dart';
 import '../widgets/fade_in_slide.dart';
+import 'debts_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -30,11 +33,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       if (!mounted) return;
       final walletProvider = context.read<WalletProvider>();
       final txnProvider = context.read<TransactionProvider>();
-      if (walletProvider.selectedWalletId == null) {
-        walletProvider.selectWallet(Wallet.cashWalletId);
-      }
-      txnProvider.walletFilter =
-          walletProvider.selectedWalletId ?? Wallet.cashWalletId;
+      txnProvider.walletFilter = walletProvider.selectedWalletId;
     });
   }
 
@@ -50,8 +49,19 @@ class _DashboardScreenState extends State<DashboardScreen> {
               const WalletSelector(),
               const SizedBox(height: 8),
               _buildBalanceCard(context),
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton.icon(
+                  onPressed: () => showDebtForm(context),
+                  icon: const Icon(Icons.handshake_outlined),
+                  label: Text(l10n.iou),
+                ),
+              ),
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 8,
+                ),
                 child: TextField(
                   decoration: InputDecoration(
                     hintText: l10n.searchByRemark,
@@ -61,8 +71,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     ),
                   ),
                   onChanged: (val) {
-                    Provider.of<TransactionProvider>(context, listen: false)
-                        .searchQuery = val;
+                    Provider.of<TransactionProvider>(
+                      context,
+                      listen: false,
+                    ).searchQuery = val;
                   },
                 ),
               ),
@@ -70,103 +82,107 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 child: Consumer<TransactionProvider>(
                   builder: (ctx, provider, _) {
                     final list = provider.filteredTransactions;
-                    if (list.isEmpty) {
+                    if (provider.failed) {
                       return Center(
-                        child: Text(l10n.noTransactionsYet),
+                        child: TextButton(
+                          onPressed: provider.loadTransactions,
+                          child: Text(l10n.loadError),
+                        ),
                       );
                     }
-                    return ListView.builder(
-                      itemCount: list.length,
-                      itemBuilder: (ctx, index) {
-                        final txn = list[index];
-                        return FadeInSlide(
-                          delayMilliseconds: (index * 40).clamp(0, 300),
-                          child: Dismissible(
-                            key: Key(txn.id.toString()),
-                            direction: DismissDirection.horizontal,
-                            confirmDismiss: (direction) async {
-                              if (direction == DismissDirection.endToStart) {
-                                final confirm = await showDialog<bool>(
-                                  context: context,
-                                  builder: (_) => AlertDialog(
-                                    title: Text(l10n.deleteTransaction),
-                                    content: Text(l10n.deleteTransactionBody),
-                                    actions: [
-                                      TextButton(
-                                        onPressed: () =>
-                                            Navigator.pop(context, false),
-                                        child: Text(l10n.cancel),
-                                      ),
-                                      TextButton(
-                                        onPressed: () =>
-                                            Navigator.pop(context, true),
-                                        style: TextButton.styleFrom(
-                                          foregroundColor: Colors.red,
-                                        ),
-                                        child: Text(l10n.delete),
-                                      ),
-                                    ],
-                                  ),
-                                );
-                                if (confirm == true) {
-                                  provider.softDelete(txn.id!);
-                                  if (!context.mounted) return true;
-                                  _showUndoSnackBar(context);
-                                  return true;
+                    if (provider.loading && list.isEmpty) {
+                      return const Center(child: CircularProgressIndicator());
+                    }
+                    if (list.isEmpty) {
+                      return Center(child: Text(l10n.noTransactionsYet));
+                    }
+                    return NotificationListener<ScrollNotification>(
+                      onNotification: (n) {
+                        if (n.metrics.extentAfter < 250) provider.loadMore();
+                        return false;
+                      },
+                      child: ListView.builder(
+                        padding: const EdgeInsets.only(bottom: 160),
+                        itemCount: list.length + (provider.hasMore ? 1 : 0),
+                        itemBuilder: (ctx, index) {
+                          if (index == list.length) {
+                            return TextButton(
+                              onPressed: provider.loadMore,
+                              child: Text(l10n.loadMore),
+                            );
+                          }
+                          final txn = list[index];
+                          return FadeInSlide(
+                            delayMilliseconds: (index * 40).clamp(0, 300),
+                            child: Dismissible(
+                              key: Key(txn.id.toString()),
+                              direction: txn.isDebtManaged
+                                  ? DismissDirection.none
+                                  : DismissDirection.horizontal,
+                              confirmDismiss: (direction) async {
+                                if (direction == DismissDirection.endToStart) {
+                                  return _deleteTransaction(txn);
                                 } else {
+                                  WidgetsBinding.instance.addPostFrameCallback((
+                                    _,
+                                  ) {
+                                    if (mounted) _openEditModal(context, txn);
+                                  });
                                   return false;
                                 }
-                              } else {
-                                WidgetsBinding.instance.addPostFrameCallback((_) {
-                                  if (mounted) _openEditModal(context, txn);
-                                });
-                                return false;
-                              }
-                            },
-                            background: Container(
-                              color: Colors.green,
-                              alignment: Alignment.centerLeft,
-                              padding: const EdgeInsets.only(left: 24),
-                              child: const Row(
-                                mainAxisAlignment: MainAxisAlignment.start,
-                                children: [
-                                  Icon(Icons.edit, color: Colors.white),
-                                  SizedBox(width: 8),
-                                  Text(
-                                    'Edit',
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.bold,
+                              },
+                              background: Container(
+                                color: Colors.green,
+                                alignment: Alignment.centerLeft,
+                                padding: const EdgeInsets.only(left: 24),
+                                child: const Row(
+                                  mainAxisAlignment: MainAxisAlignment.start,
+                                  children: [
+                                    Icon(Icons.edit, color: Colors.white),
+                                    SizedBox(width: 8),
+                                    Text(
+                                      'Edit',
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.bold,
+                                      ),
                                     ),
-                                  ),
-                                ],
+                                  ],
+                                ),
+                              ),
+                              secondaryBackground: Container(
+                                color: Colors.orange,
+                                alignment: Alignment.centerRight,
+                                padding: const EdgeInsets.only(right: 24),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.end,
+                                  children: [
+                                    Text(
+                                      l10n.delete,
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    const Icon(
+                                      Icons.delete,
+                                      color: Colors.white,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              child: TransactionListItem(
+                                txn: txn,
+                                alternate: index.isOdd,
+                                onTap: () => _showRecordDetails(txn),
                               ),
                             ),
-                            secondaryBackground: Container(
-                              color: Colors.orange,
-                              alignment: Alignment.centerRight,
-                              padding: const EdgeInsets.only(right: 24),
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.end,
-                                children: [
-                                  Text(
-                                    l10n.delete,
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  const Icon(Icons.delete, color: Colors.white),
-                                ],
-                              ),
-                            ),
-                            child: TransactionListItem(txn: txn),
-                          ),
-                        );
-                      },
+                          );
+                        },
+                      ),
                     );
                   },
                 ),
@@ -247,8 +263,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   int _currentDefaultWalletId(BuildContext context) {
-    return Provider.of<WalletProvider>(context, listen: false)
-            .selectedWalletId ??
+    return Provider.of<WalletProvider>(
+          context,
+          listen: false,
+        ).selectedWalletId ??
         Wallet.cashWalletId;
   }
 
@@ -262,8 +280,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
         child: IncomeModal(
           defaultWalletId: _currentDefaultWalletId(context),
           onSave: (txn) {
-            Provider.of<TransactionProvider>(context, listen: false)
-                .addTransaction(txn);
+            Provider.of<TransactionProvider>(
+              context,
+              listen: false,
+            ).addTransaction(txn);
           },
         ),
       ),
@@ -280,8 +300,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
         child: ExpenseModal(
           defaultWalletId: _currentDefaultWalletId(context),
           onSave: (txn) {
-            Provider.of<TransactionProvider>(context, listen: false)
-                .addTransaction(txn);
+            Provider.of<TransactionProvider>(
+              context,
+              listen: false,
+            ).addTransaction(txn);
           },
         ),
       ),
@@ -294,16 +316,21 @@ class _DashboardScreenState extends State<DashboardScreen> {
         context: context,
         barrierDismissible: true,
         builder: (_) => Dialog(
-          insetPadding:
-              const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          insetPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 24,
+          ),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
           child: IncomeModal(
             initialTransaction: txn,
             defaultWalletId: txn.walletId,
             onSave: (updated) {
-              Provider.of<TransactionProvider>(context, listen: false)
-                  .updateTransaction(updated);
+              Provider.of<TransactionProvider>(
+                context,
+                listen: false,
+              ).updateTransaction(updated);
             },
           ),
         ),
@@ -313,20 +340,97 @@ class _DashboardScreenState extends State<DashboardScreen> {
         context: context,
         barrierDismissible: true,
         builder: (_) => Dialog(
-          insetPadding:
-              const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          insetPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 24,
+          ),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
           child: ExpenseModal(
             initialTransaction: txn,
             defaultWalletId: txn.walletId,
             onSave: (updated) {
-              Provider.of<TransactionProvider>(context, listen: false)
-                  .updateTransaction(updated);
+              Provider.of<TransactionProvider>(
+                context,
+                listen: false,
+              ).updateTransaction(updated);
             },
           ),
         ),
       );
+    }
+  }
+
+  Future<bool> _deleteTransaction(Transaction transaction) async {
+    if (transaction.isDebtManaged) return false;
+    final l = AppLocalizations.of(context);
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(l.deleteTransaction),
+        content: Text(l.deleteTransactionBody),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(l.cancel),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text(l.delete),
+          ),
+        ],
+      ),
+    );
+    if (confirm != true || !mounted) return false;
+    try {
+      await context.read<TransactionProvider>().softDelete(transaction.id!);
+      if (mounted) _showUndoSnackBar(context);
+      return true;
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(l.debtError)));
+      }
+      return false;
+    }
+  }
+
+  Future<void> _showRecordDetails(Transaction transaction) async {
+    FocusManager.instance.primaryFocus?.unfocus();
+    final action = await showModalBottomSheet<TransactionRecordAction>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      useSafeArea: true,
+      sheetAnimationStyle: AnimationStyle.noAnimation,
+      builder: (_) => TransactionDetails(transaction: transaction),
+    );
+    if (!mounted || action == null) return;
+    switch (action) {
+      case TransactionRecordAction.edit:
+        _openEditModal(context, transaction);
+      case TransactionRecordAction.delete:
+        await _deleteTransaction(transaction);
+      case TransactionRecordAction.openDebt:
+        try {
+          final debt = await DebtStore().forTransaction(transaction);
+          if (!mounted) return;
+          await showModalBottomSheet<void>(
+            context: context,
+            isScrollControlled: true,
+            useSafeArea: true,
+            sheetAnimationStyle: AnimationStyle.noAnimation,
+            builder: (_) => DebtDetail(debt: debt),
+          );
+        } catch (_) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(AppLocalizations.of(context).loadError)),
+            );
+          }
+        }
     }
   }
 
@@ -337,13 +441,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
       action: SnackBarAction(
         label: l10n.undo,
         onPressed: () {
-          final provider =
-              Provider.of<TransactionProvider>(context, listen: false);
+          final provider = Provider.of<TransactionProvider>(
+            context,
+            listen: false,
+          );
           provider.undoDelete();
-          final last = provider.lastDeleted;
-          if (last != null) {
-            provider.addTransaction(last);
-          }
         },
       ),
       duration: const Duration(seconds: 5),

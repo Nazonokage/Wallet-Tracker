@@ -6,7 +6,7 @@ import '../models/wallet.dart';
 class WalletProvider extends ChangeNotifier {
   final DatabaseHelper _database = DatabaseHelper();
 
-  List<Wallet> _wallets = [];
+  List<Wallet> _wallets = const [];
 
   int? _selectedWalletId = Wallet.cashWalletId;
 
@@ -18,7 +18,7 @@ class WalletProvider extends ChangeNotifier {
   // GETTERS
   // ------------------------------------------------------------
 
-  List<Wallet> get wallets => List.unmodifiable(_wallets);
+  List<Wallet> get wallets => _wallets;
 
   int? get selectedWalletId => _selectedWalletId;
 
@@ -35,9 +35,7 @@ class WalletProvider extends ChangeNotifier {
     }
 
     try {
-      return _wallets.firstWhere(
-        (wallet) => wallet.id == _selectedWalletId,
-      );
+      return _wallets.firstWhere((wallet) => wallet.id == _selectedWalletId);
     } catch (_) {
       return null;
     }
@@ -45,42 +43,38 @@ class WalletProvider extends ChangeNotifier {
 
   /// Combined starting balance of all wallets.
   double get combinedInitialBalance {
-    return _wallets.fold(
-      0.0,
-      (total, wallet) => total + wallet.initialBalance,
-    );
+    return _wallets.fold(0.0, (total, wallet) => total + wallet.initialBalance);
   }
 
   // ------------------------------------------------------------
   // CONSTRUCTOR
   // ------------------------------------------------------------
 
-  WalletProvider() {
-    loadWallets();
-  }
+  WalletProvider();
 
   // ------------------------------------------------------------
   // LOAD WALLETS
   // ------------------------------------------------------------
 
   Future<void> loadWallets() async {
-    _setLoading(true);
+    _isLoading = true;
     _clearError();
 
     try {
       final wallets = await _database.getAllWallets();
 
-      _wallets = wallets;
+      _wallets = List.unmodifiable(wallets);
 
-      // Always ensure Cash wallet (id 1) is selected by default if none selected or missing.
-      if (_selectedWalletId == null ||
+      // Preserve the explicit "All wallets" selection across reloads.
+      if (_selectedWalletId != null &&
           !_wallets.any((wallet) => wallet.id == _selectedWalletId)) {
         _selectedWalletId = Wallet.cashWalletId;
       }
     } catch (e) {
-      _setError('Failed to load wallets: $e');
+      _error = 'Failed to load wallets: $e';
     } finally {
-      _setLoading(false);
+      _isLoading = false;
+      notifyListeners();
     }
   }
 
@@ -116,7 +110,7 @@ class WalletProvider extends ChangeNotifier {
 
       wallet.id = id;
 
-      _wallets = [..._wallets, wallet];
+      _wallets = List.unmodifiable([..._wallets, wallet]);
 
       notifyListeners();
 
@@ -148,7 +142,7 @@ class WalletProvider extends ChangeNotifier {
       final updatedWallets = [..._wallets];
       updatedWallets[index] = wallet;
 
-      _wallets = updatedWallets;
+      _wallets = List.unmodifiable(updatedWallets);
 
       notifyListeners();
 
@@ -175,7 +169,7 @@ class WalletProvider extends ChangeNotifier {
     try {
       await _database.deleteWallet(id);
 
-      _wallets = _wallets.where((wallet) => wallet.id != id).toList();
+      _wallets = List.unmodifiable(_wallets.where((wallet) => wallet.id != id));
 
       // If the deleted wallet was selected,
       // return to "All wallets".
@@ -217,13 +211,4 @@ class WalletProvider extends ChangeNotifier {
   // ------------------------------------------------------------
   // LOADING STATE
   // ------------------------------------------------------------
-
-  void _setLoading(bool value) {
-    if (_isLoading == value) {
-      return;
-    }
-
-    _isLoading = value;
-    notifyListeners();
-  }
 }

@@ -11,19 +11,33 @@ import '../widgets/wallet_logo.dart';
 import '../widgets/particle_background.dart';
 import '../widgets/animated_count_text.dart';
 import '../widgets/fade_in_slide.dart';
+import '../providers/debt_provider.dart';
+import '../models/debt.dart';
+import 'debts_screen.dart';
 
 class WalletsScreen extends StatefulWidget {
   final Function(int?)? onWalletSelected;
 
-  const WalletsScreen({super.key, this.onWalletSelected});
+  final ValueChanged<DebtDirectionFilter>? onDebtSelected;
+  const WalletsScreen({super.key, this.onWalletSelected, this.onDebtSelected});
 
   @override
   State<WalletsScreen> createState() => _WalletsScreenState();
 }
 
 class _WalletsScreenState extends State<WalletsScreen> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) context.read<DebtProvider>().loadSummary();
+    });
+  }
+
   double _calculateWalletBalance(
-      Wallet wallet, TransactionProvider txnProvider) {
+    Wallet wallet,
+    TransactionProvider txnProvider,
+  ) {
     final netTxn = txnProvider.netBalanceForWallet(wallet.id!);
     return wallet.initialBalance + netTxn;
   }
@@ -58,12 +72,19 @@ class _WalletsScreenState extends State<WalletsScreen> {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Icon(Icons.account_balance_wallet_outlined,
-                        size: 64, color: Colors.grey),
+                    const Icon(
+                      Icons.account_balance_wallet_outlined,
+                      size: 64,
+                      color: Colors.grey,
+                    ),
                     const SizedBox(height: 16),
-                    Text(l10n.noWalletsFound,
-                        style:
-                            const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                    Text(
+                      l10n.noWalletsFound,
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                     const SizedBox(height: 8),
                     ElevatedButton.icon(
                       onPressed: () => _openAddWallet(context),
@@ -82,7 +103,9 @@ class _WalletsScreenState extends State<WalletsScreen> {
 
             final Map<String, List<Wallet>> grouped = {};
             for (final wallet in wallets) {
-              final cat = wallet.category.isEmpty ? l10n.bankAccount : wallet.category;
+              final cat = wallet.category.isEmpty
+                  ? l10n.bankAccount
+                  : wallet.category;
               grouped.putIfAbsent(cat, () => []).add(wallet);
             }
 
@@ -118,7 +141,9 @@ class _WalletsScreenState extends State<WalletsScreen> {
                               ),
                               Container(
                                 padding: const EdgeInsets.symmetric(
-                                    horizontal: 10, vertical: 4),
+                                  horizontal: 10,
+                                  vertical: 4,
+                                ),
                                 decoration: BoxDecoration(
                                   color: theme.colorScheme.primaryContainer,
                                   borderRadius: BorderRadius.circular(12),
@@ -166,14 +191,19 @@ class _WalletsScreenState extends State<WalletsScreen> {
                         // Category Header
                         Padding(
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 4, vertical: 8),
+                            horizontal: 4,
+                            vertical: 8,
+                          ),
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               Row(
                                 children: [
-                                  const Icon(Icons.arrow_drop_down,
-                                      size: 22, color: Colors.grey),
+                                  const Icon(
+                                    Icons.arrow_drop_down,
+                                    size: 22,
+                                    color: Colors.grey,
+                                  ),
                                   const SizedBox(width: 2),
                                   Text(
                                     categoryName,
@@ -201,8 +231,10 @@ class _WalletsScreenState extends State<WalletsScreen> {
                         ...categoryWallets.map((wallet) {
                           itemCounter++;
                           final delay = (itemCounter * 50).clamp(0, 400);
-                          final walletBalance =
-                              _calculateWalletBalance(wallet, txnProvider);
+                          final walletBalance = _calculateWalletBalance(
+                            wallet,
+                            txnProvider,
+                          );
                           return FadeInSlide(
                             delayMilliseconds: delay,
                             child: _build1ColumnWalletCard(
@@ -221,6 +253,30 @@ class _WalletsScreenState extends State<WalletsScreen> {
 
                   const SizedBox(height: 8),
 
+                  Consumer<DebtProvider>(
+                    builder: (context, debts, _) => Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(l10n.debts, style: theme.textTheme.titleMedium),
+                        for (final direction in DebtDirection.values)
+                          ListTile(
+                            title: Text(
+                              direction == DebtDirection.lent
+                                  ? l10n.receivables
+                                  : l10n.payables,
+                            ),
+                            trailing: Text(
+                              debtMoney(context, debts.totals[direction] ?? 0),
+                            ),
+                            onTap: () => widget.onDebtSelected?.call(
+                              direction == DebtDirection.lent
+                                  ? DebtDirectionFilter.lent
+                                  : DebtDirectionFilter.borrowed,
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
                   // Add Wallet Button at bottom
                   SizedBox(
                     width: double.infinity,
@@ -232,7 +288,9 @@ class _WalletsScreenState extends State<WalletsScreen> {
                           borderRadius: BorderRadius.circular(16),
                         ),
                         side: BorderSide(
-                          color: theme.colorScheme.primary.withValues(alpha: 0.5),
+                          color: theme.colorScheme.primary.withValues(
+                            alpha: 0.5,
+                          ),
                           width: 1.5,
                         ),
                       ),
@@ -421,9 +479,7 @@ class _WalletsScreenState extends State<WalletsScreen> {
                     context: context,
                     builder: (_) => AlertDialog(
                       title: Text(l10n.deleteWalletConfirmTitle(wallet.name)),
-                      content: Text(
-                        l10n.deleteWalletConfirmBody,
-                      ),
+                      content: Text(l10n.deleteWalletConfirmBody),
                       actions: [
                         TextButton(
                           onPressed: () => Navigator.pop(context, false),
@@ -432,15 +488,24 @@ class _WalletsScreenState extends State<WalletsScreen> {
                         TextButton(
                           onPressed: () => Navigator.pop(context, true),
                           style: TextButton.styleFrom(
-                              foregroundColor: Colors.red),
+                            foregroundColor: Colors.red,
+                          ),
                           child: Text(l10n.delete),
                         ),
                       ],
                     ),
                   );
                   if (confirm == true && context.mounted) {
-                    await context.read<WalletProvider>().deleteWallet(wallet.id!);
+                    final deleted = await context
+                        .read<WalletProvider>()
+                        .deleteWallet(wallet.id!);
                     if (!context.mounted) return;
+                    if (!deleted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text(l10n.debtWalletInUse)),
+                      );
+                      return;
+                    }
                     context
                         .read<TransactionProvider>()
                         .removeTransactionsForWallet(wallet.id!);

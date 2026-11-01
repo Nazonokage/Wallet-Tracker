@@ -25,7 +25,7 @@ class _HelpGuideModalState extends State<HelpGuideModal>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 4, vsync: this);
+    _tabController = TabController(length: 5, vsync: this);
   }
 
   @override
@@ -124,6 +124,7 @@ class _HelpGuideModalState extends State<HelpGuideModal>
             indicatorColor: theme.colorScheme.primary,
             indicatorWeight: 3,
             tabs: [
+              Tab(icon: const Icon(Icons.handshake_outlined, size: 20), text: l10n.debts),
               const Tab(icon: Icon(Icons.swipe_outlined, size: 20), text: 'Gestures & Spends'),
               Tab(icon: const Icon(Icons.account_balance_wallet_outlined, size: 20), text: l10n.walletsAndSavings),
               Tab(icon: const Icon(Icons.analytics_outlined, size: 20), text: l10n.analytics),
@@ -138,6 +139,7 @@ class _HelpGuideModalState extends State<HelpGuideModal>
             child: TabBarView(
               controller: _tabController,
               children: [
+                ListView(padding: const EdgeInsets.all(20), children: [Text(l10n.debtGuide)]),
                 _buildGesturesTab(theme),
                 _buildWalletsTab(theme),
                 _buildAnalyticsTab(theme),

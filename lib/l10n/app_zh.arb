@@ -47,7 +47,7 @@
   "addExpensesForAnalytics": "添加一些支出以查看分析",
   "spendingByCategory": "按分类支出",
   "clearAllData": "清除所有数据",
-  "clearAllDataConfirm": "这将永久删除所有交易。继续吗？",
+  "clearAllDataConfirm": "这将永久删除交易、债务、还款、联系人、预算和自定义钱包，并将现金余额归零。请先导出备份。",
   "yesClear": "是的，清除",
   "areYouAbsolutelySure": "您确定吗？",
   "cannotBeUndone": "无法撤销。",
@@ -99,5 +99,83 @@
   "noWalletsFound": "未找到钱包",
   "addYourFirstWallet": "添加你的第一个钱包",
   "accounts": "账户",
-  "addCustomizableWallet": "添加自定义钱包"
+  "addCustomizableWallet": "添加自定义钱包",
+  "debts": "Debts",
+  "iou": "IOU",
+  "lent": "Lent",
+  "borrowed": "Borrowed",
+  "outstanding": "Outstanding",
+  "partial": "Partial",
+  "archived": "Archived",
+  "owedToYou": "Owed to you",
+  "youOwe": "You owe",
+  "receivables": "Receivables",
+  "payables": "Payables",
+  "noDebts": "No debts yet. Tap + IOU to record one.",
+  "person": "Person",
+  "interest": "Flat interest",
+  "interestRate": "Interest (%)",
+  "totalDue": "Total due",
+  "dueDate": "Due date (optional)",
+  "note": "Note (optional)",
+  "recordRepayment": "Record repayment",
+  "repaymentRecorded": "Repayment recorded",
+  "markAsPaid": "Mark as paid",
+  "markedAsPaid": "Marked as paid",
+  "archive": "Archive",
+  "archiveConfirmation": "Archive this debt? It will leave active totals. Wallet movements stay unchanged.",
+  "paidConfirmation": "Record the full remaining amount as a repayment?",
+  "debtSaved": "Debt saved",
+  "debtError": "Could not save the change. Check the amount and wallet, then retry.",
+  "loadError": "Could not load data. Tap retry.",
+  "retry": "Retry",
+  "loadMore": "Load more",
+  "debtLocked": "Amount, interest, direction and wallet cannot change after a repayment.",
+  "repaymentAmount": "Repayment amount",
+  "debtAmountInvalid": "Enter an amount greater than zero, up to the remaining balance.",
+  "debtGuide": "Record money lent or borrowed using a real wallet. Optional interest is a flat percentage, off by default. Repayments pay principal first. Principal movements change your wallet balance but stay out of spending analytics; interest counts as income or expense. Fully repaid debts are archived automatically. Use CSV or Excel export to back up debts and repayments.",
+  "debtOverdue": "Overdue {days} days",
+  "debtDue": "Due {date}",
+  "debtPaid": "Paid {amount}",
+  "debtDelete": "Delete debt",
+  "debtDeleteConfirmation": "Delete this debt and reverse all its recorded wallet movements?",
+  "debtDeleted": "Debt deleted",
+  "debtWalletInUse": "This wallet has debt records. Keep it to preserve their payment history.",
+  "backupImported": "Backup imported",
+  "backupGuide": "Data and backup",
+  "@debtOverdue": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "@debtDue": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "@debtPaid": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "edit": "Edit",
+  "backupImportConfirmation": "This adds the backup to your existing data, including wallet starting balances, transactions, debts and repayments. Existing records stay. Importing the same backup twice creates duplicates.",
+  "recordDetails": "记录详情",
+  "transactionType": "类型",
+  "recordedAt": "时间戳",
+  "transactionCategory": "类别",
+  "remarkLabel": "备注",
+  "incomeLabel": "收入",
+  "expenseLabel": "支出",
+  "openDebt": "查看债务",
+  "managedDebtRecord": "此笔交易属于债务。请打开债务以编辑，或一并删除关联记录。",
+  "thisWeekFilter": "本周",
+  "keepDataTitle": "保留数据",
+  "keepDataBody": "更新会保留记录。换新手机时，请恢复Android备份，或在此导出文件后在新手机上导入。请将备份保存在应用之外。"
 }

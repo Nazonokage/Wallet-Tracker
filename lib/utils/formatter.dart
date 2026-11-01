@@ -1,9 +1,11 @@
 import 'package:intl/intl.dart';
 
-String formatAmount(double amount) {
-  final formatter = NumberFormat('#,##0.00');
-  return formatter.format(amount);
-}
+final _amountFormats = <String, NumberFormat>{};
+
+String formatAmount(double amount) => (_amountFormats.putIfAbsent(
+  Intl.getCurrentLocale(),
+  () => NumberFormat('#,##0.00'),
+)).format(amount);
 
 double? parseAmount(String text) {
   if (text.isEmpty) return null;

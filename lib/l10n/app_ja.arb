@@ -47,7 +47,7 @@
   "addExpensesForAnalytics": "分析を見るには支出を追加してください",
   "spendingByCategory": "カテゴリ別支出",
   "clearAllData": "すべてのデータを削除",
-  "clearAllDataConfirm": "すべての取引が完全に削除されます。続けますか？",
+  "clearAllDataConfirm": "取引、貸付・借入、返済、連絡先、予算、カスタムウォレットを完全に削除し、現金残高をゼロに戻します。先にバックアップをエクスポートしてください。",
   "yesClear": "はい、削除",
   "areYouAbsolutelySure": "本当によろしいですか？",
   "cannotBeUndone": "元に戻せません。",
@@ -99,5 +99,83 @@
   "noWalletsFound": "ウォレットが見つかりません",
   "addYourFirstWallet": "最初のウォレットを追加",
   "accounts": "口座",
-  "addCustomizableWallet": "カスタムウォレットを追加"
+  "addCustomizableWallet": "カスタムウォレットを追加",
+  "debts": "Debts",
+  "iou": "IOU",
+  "lent": "Lent",
+  "borrowed": "Borrowed",
+  "outstanding": "Outstanding",
+  "partial": "Partial",
+  "archived": "Archived",
+  "owedToYou": "Owed to you",
+  "youOwe": "You owe",
+  "receivables": "Receivables",
+  "payables": "Payables",
+  "noDebts": "No debts yet. Tap + IOU to record one.",
+  "person": "Person",
+  "interest": "Flat interest",
+  "interestRate": "Interest (%)",
+  "totalDue": "Total due",
+  "dueDate": "Due date (optional)",
+  "note": "Note (optional)",
+  "recordRepayment": "Record repayment",
+  "repaymentRecorded": "Repayment recorded",
+  "markAsPaid": "Mark as paid",
+  "markedAsPaid": "Marked as paid",
+  "archive": "Archive",
+  "archiveConfirmation": "Archive this debt? It will leave active totals. Wallet movements stay unchanged.",
+  "paidConfirmation": "Record the full remaining amount as a repayment?",
+  "debtSaved": "Debt saved",
+  "debtError": "Could not save the change. Check the amount and wallet, then retry.",
+  "loadError": "Could not load data. Tap retry.",
+  "retry": "Retry",
+  "loadMore": "Load more",
+  "debtLocked": "Amount, interest, direction and wallet cannot change after a repayment.",
+  "repaymentAmount": "Repayment amount",
+  "debtAmountInvalid": "Enter an amount greater than zero, up to the remaining balance.",
+  "debtGuide": "Record money lent or borrowed using a real wallet. Optional interest is a flat percentage, off by default. Repayments pay principal first. Principal movements change your wallet balance but stay out of spending analytics; interest counts as income or expense. Fully repaid debts are archived automatically. Use CSV or Excel export to back up debts and repayments.",
+  "debtOverdue": "Overdue {days} days",
+  "debtDue": "Due {date}",
+  "debtPaid": "Paid {amount}",
+  "debtDelete": "Delete debt",
+  "debtDeleteConfirmation": "Delete this debt and reverse all its recorded wallet movements?",
+  "debtDeleted": "Debt deleted",
+  "debtWalletInUse": "This wallet has debt records. Keep it to preserve their payment history.",
+  "backupImported": "Backup imported",
+  "backupGuide": "Data and backup",
+  "@debtOverdue": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "@debtDue": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "@debtPaid": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "edit": "Edit",
+  "backupImportConfirmation": "This adds the backup to your existing data, including wallet starting balances, transactions, debts and repayments. Existing records stay. Importing the same backup twice creates duplicates.",
+  "recordDetails": "記録の詳細",
+  "transactionType": "種類",
+  "recordedAt": "日時",
+  "transactionCategory": "カテゴリー",
+  "remarkLabel": "メモ",
+  "incomeLabel": "収入",
+  "expenseLabel": "支出",
+  "openDebt": "借入・貸付を開く",
+  "managedDebtRecord": "この取引は借入・貸付に関連しています。関連する記録を編集・削除するには、借入・貸付を開いてください。",
+  "thisWeekFilter": "今週",
+  "keepDataTitle": "データを保持",
+  "keepDataBody": "更新後も記録は保持されます。新しい端末ではAndroidバックアップを復元するか、ここでエクスポートして新しい端末でインポートしてください。バックアップはアプリの外に保存してください。"
 }

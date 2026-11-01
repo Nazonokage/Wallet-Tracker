@@ -37,9 +37,7 @@ class ImportExportHelper {
 
     final walletMap = {for (var w in wallets) w.id: w.name};
 
-    final rows = <List<dynamic>>[
-      headers,
-    ];
+    final rows = <List<dynamic>>[headers];
 
     for (final txn in transactions) {
       rows.add([
@@ -101,35 +99,12 @@ class ImportExportHelper {
   /// Parses a CSV or XLSX file and returns a list of Transactions ready to insert.
   /// Unknown categories become `others`. Missing wallet → Cash.
   /// Throws a descriptive Exception on parse problems.
-  static Future<List<Transaction>> parseImportFile(String filePath) async {
-    final ext = p.extension(filePath).toLowerCase();
-    List<List<dynamic>> rows;
-
-    if (ext == '.csv') {
-      final content = await File(filePath).readAsString();
-      rows = const CsvToListConverter(eol: '\n').convert(content);
-    } else if (ext == '.xlsx' || ext == '.xls') {
-      final bytes = await File(filePath).readAsBytes();
-      final excel = Excel.decodeBytes(bytes);
-      final sheet = excel.tables.values.first;
-      rows = sheet.rows.map((row) {
-        return row.map((cell) {
-          final v = cell?.value;
-          if (v == null) return null;
-          // CellValue subtypes in excel 4.x
-          if (v is TextCellValue) return v.value;
-          if (v is IntCellValue) return v.value;
-          if (v is DoubleCellValue) return v.value;
-          if (v is BoolCellValue) return v.value;
-          return v.toString();
-        }).toList();
-      }).toList();
-    } else {
-      throw Exception('Unsupported file type. Please use .csv or .xlsx');
-    }
-
-    if (rows.isEmpty) throw Exception('File is empty');
-
+  static Future<List<Transaction>> parseImportFile(
+    String filePath, {
+    List<Wallet>? wallets,
+  }) async {
+    final rows = await compute(_readLegacyRows, filePath);
+    final existingWallets = wallets ?? await DatabaseHelper().getAllWallets();
     // Normalise header row
     final headerRow = rows.first
         .map((e) => e?.toString().trim().toLowerCase() ?? '')
@@ -156,7 +131,6 @@ class ImportExportHelper {
     final walletIdx = headerRow.indexOf('wallet');
 
     // Load existing wallets so we can map by name
-    final existingWallets = await DatabaseHelper().getAllWallets();
     final walletNameToId = {
       for (var w in existingWallets) w.name.toLowerCase(): w.id!,
     };
@@ -191,36 +165,40 @@ class ImportExportHelper {
         // Category
         Category? category;
         if (type == TransactionType.expense && categoryIdx != -1) {
-          final catStr =
-              (row[categoryIdx]?.toString() ?? '').trim().toLowerCase();
+          final catStr = (row[categoryIdx]?.toString() ?? '')
+              .trim()
+              .toLowerCase();
           category = _parseCategory(catStr);
         }
 
         // Remark
         final remark = remarkIdx != -1
             ? (row[remarkIdx]?.toString().trim().isEmpty == true
-                ? null
-                : row[remarkIdx]?.toString().trim())
+                  ? null
+                  : row[remarkIdx]?.toString().trim())
             : null;
 
         // Wallet
         int walletId = Wallet.cashWalletId;
         if (walletIdx != -1) {
-          final walletName =
-              (row[walletIdx]?.toString() ?? '').trim().toLowerCase();
+          final walletName = (row[walletIdx]?.toString() ?? '')
+              .trim()
+              .toLowerCase();
           if (walletName.isNotEmpty && walletNameToId.containsKey(walletName)) {
             walletId = walletNameToId[walletName]!;
           }
         }
 
-        result.add(Transaction(
-          type: type,
-          amount: amount,
-          category: category,
-          remark: remark,
-          date: date,
-          walletId: walletId,
-        ));
+        result.add(
+          Transaction(
+            type: type,
+            amount: amount,
+            category: category,
+            remark: remark,
+            date: date,
+            walletId: walletId,
+          ),
+        );
       } catch (e) {
         debugPrint('Skipping row ${i + 2}: $e');
       }
@@ -244,8 +222,43 @@ class ImportExportHelper {
   static Future<String> writeTempFile(List<int> bytes, String extension) async {
     final dir = await getTemporaryDirectory();
     final path = p.join(
-        dir.path, 'import_${DateTime.now().millisecondsSinceEpoch}.$extension');
+      dir.path,
+      'import_${DateTime.now().millisecondsSinceEpoch}.$extension',
+    );
     await File(path).writeAsBytes(bytes);
     return path;
   }
+}
+
+Future<List<List<dynamic>>> _readLegacyRows(String filePath) async {
+  final ext = p.extension(filePath).toLowerCase();
+  List<List<dynamic>> rows;
+
+  if (ext == '.csv') {
+    final content = await File(filePath).readAsString();
+    rows = const CsvToListConverter(
+      eol: '\n',
+    ).convert(content.replaceAll('\r\n', '\n'));
+  } else if (ext == '.xlsx' || ext == '.xls') {
+    final bytes = await File(filePath).readAsBytes();
+    final excel = Excel.decodeBytes(bytes);
+    final sheet = excel.tables.values.first;
+    rows = sheet.rows.map((row) {
+      return row.map((cell) {
+        final v = cell?.value;
+        if (v == null) return null;
+        // CellValue subtypes in excel 4.x
+        if (v is TextCellValue) return v.value;
+        if (v is IntCellValue) return v.value;
+        if (v is DoubleCellValue) return v.value;
+        if (v is BoolCellValue) return v.value;
+        return v.toString();
+      }).toList();
+    }).toList();
+  } else {
+    throw Exception('Unsupported file type. Please use .csv or .xlsx');
+  }
+
+  if (rows.isEmpty) throw Exception('File is empty');
+  return rows;
 }

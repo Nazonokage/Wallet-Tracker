@@ -9,9 +9,15 @@
   "thisWeek": "This week: +{currency}{income} / −{currency}{expense}",
   "@thisWeek": {
     "placeholders": {
-      "currency": {"type": "String"},
-      "income": {"type": "String"},
-      "expense": {"type": "String"}
+      "currency": {
+        "type": "String"
+      },
+      "income": {
+        "type": "String"
+      },
+      "expense": {
+        "type": "String"
+      }
     }
   },
   "searchByRemark": "Search by remark...",
@@ -43,7 +49,9 @@
   "deleteWalletConfirmTitle": "Delete \"{name}\"?",
   "@deleteWalletConfirmTitle": {
     "placeholders": {
-      "name": {"type": "String"}
+      "name": {
+        "type": "String"
+      }
     }
   },
   "deleteWalletConfirmBody": "This also deletes every transaction recorded under this wallet. This cannot be undone.",
@@ -52,9 +60,15 @@
   "largeExpenseBody": "Are you sure you want to spend {currency}{amount} on {category}?\n\nThis is higher than a typical {category} expense.",
   "@largeExpenseBody": {
     "placeholders": {
-      "currency": {"type": "String"},
-      "amount": {"type": "String"},
-      "category": {"type": "String"}
+      "currency": {
+        "type": "String"
+      },
+      "amount": {
+        "type": "String"
+      },
+      "category": {
+        "type": "String"
+      }
     }
   },
   "yesSpendIt": "Yes, spend it",
@@ -66,7 +80,7 @@
   "addExpensesForAnalytics": "Add some expenses to see analytics",
   "spendingByCategory": "Spending by category",
   "clearAllData": "Clear all data",
-  "clearAllDataConfirm": "This will permanently delete all transactions. Continue?",
+  "clearAllDataConfirm": "This permanently removes transactions, debts, repayments, contacts and budgets, removes custom wallets, and resets Cash to zero. Export a backup first.",
   "yesClear": "Yes, clear",
   "areYouAbsolutelySure": "Are you absolutely sure?",
   "cannotBeUndone": "This cannot be undone.",
@@ -118,5 +132,83 @@
   "noWalletsFound": "No wallets found",
   "addYourFirstWallet": "Add your first wallet",
   "accounts": "Accounts",
-  "addCustomizableWallet": "Add Customizable Wallet"
+  "addCustomizableWallet": "Add Customizable Wallet",
+  "debts": "Debts",
+  "iou": "IOU",
+  "lent": "Lent",
+  "borrowed": "Borrowed",
+  "outstanding": "Outstanding",
+  "partial": "Partial",
+  "archived": "Archived",
+  "owedToYou": "Owed to you",
+  "youOwe": "You owe",
+  "receivables": "Receivables",
+  "payables": "Payables",
+  "noDebts": "No debts yet. Tap + IOU to record one.",
+  "person": "Person",
+  "interest": "Flat interest",
+  "interestRate": "Interest (%)",
+  "totalDue": "Total due",
+  "dueDate": "Due date (optional)",
+  "note": "Note (optional)",
+  "recordRepayment": "Record repayment",
+  "repaymentRecorded": "Repayment recorded",
+  "markAsPaid": "Mark as paid",
+  "markedAsPaid": "Marked as paid",
+  "archive": "Archive",
+  "archiveConfirmation": "Archive this debt? It will leave active totals. Wallet movements stay unchanged.",
+  "paidConfirmation": "Record the full remaining amount as a repayment?",
+  "debtSaved": "Debt saved",
+  "debtError": "Could not save the change. Check the amount and wallet, then retry.",
+  "loadError": "Could not load data. Tap retry.",
+  "retry": "Retry",
+  "loadMore": "Load more",
+  "debtLocked": "Amount, interest, direction and wallet cannot change after a repayment.",
+  "repaymentAmount": "Repayment amount",
+  "debtAmountInvalid": "Enter an amount greater than zero, up to the remaining balance.",
+  "debtGuide": "Record money lent or borrowed using a real wallet. Optional interest is a flat percentage, off by default. Repayments pay principal first. Principal movements change your wallet balance but stay out of spending analytics; interest counts as income or expense. Fully repaid debts are archived automatically. Use CSV or Excel export to back up debts and repayments.",
+  "debtOverdue": "Overdue {days} days",
+  "debtDue": "Due {date}",
+  "debtPaid": "Paid {amount}",
+  "debtDelete": "Delete debt",
+  "debtDeleteConfirmation": "Delete this debt and reverse all its recorded wallet movements?",
+  "debtDeleted": "Debt deleted",
+  "debtWalletInUse": "This wallet has debt records. Keep it to preserve their payment history.",
+  "backupImported": "Backup imported",
+  "backupGuide": "Data and backup",
+  "@debtOverdue": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "@debtDue": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "@debtPaid": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "edit": "Edit",
+  "backupImportConfirmation": "This adds the backup to your existing data, including wallet starting balances, transactions, debts and repayments. Existing records stay. Importing the same backup twice creates duplicates.",
+  "recordDetails": "Record details",
+  "transactionType": "Type",
+  "recordedAt": "Timestamp",
+  "transactionCategory": "Category",
+  "remarkLabel": "Remark",
+  "incomeLabel": "Income",
+  "expenseLabel": "Expense",
+  "openDebt": "Open debt",
+  "managedDebtRecord": "This movement belongs to a debt. Open the debt to edit it or delete its linked records together.",
+  "thisWeekFilter": "This week",
+  "keepDataTitle": "Keep your data",
+  "keepDataBody": "Updates retain your records. For a new phone, restore an Android backup or export here and import that file on the new phone. Keep the backup outside the app."
 }

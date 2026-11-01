@@ -36,7 +36,8 @@ class _IncomeModalState extends State<IncomeModal> {
     super.initState();
     // ✅ Editing keeps the transaction's original wallet; new transactions
     // default to whatever wallet was passed in (falls back to Cash).
-    _selectedWalletId = widget.initialTransaction?.walletId ??
+    _selectedWalletId =
+        widget.initialTransaction?.walletId ??
         widget.defaultWalletId ??
         Wallet.cashWalletId;
     if (widget.initialTransaction != null) {
@@ -80,6 +81,7 @@ class _IncomeModalState extends State<IncomeModal> {
             ? _selectedWalletId
             : Wallet.cashWalletId;
         return DropdownButtonFormField<int>(
+          isExpanded: true,
           initialValue: validId,
           items: wallets.map((w) {
             return DropdownMenuItem<int>(
@@ -107,8 +109,10 @@ class _IncomeModalState extends State<IncomeModal> {
             ),
             filled: true,
             fillColor: theme.colorScheme.surfaceContainerHighest,
-            contentPadding:
-                const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 10,
+            ),
           ),
         );
       },
@@ -121,77 +125,89 @@ class _IncomeModalState extends State<IncomeModal> {
     final theme = Theme.of(context);
     return Padding(
       padding: const EdgeInsets.all(20),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(Icons.add_circle_outline, color: Colors.green.shade400),
-              const SizedBox(width: 8),
-              Text(
-                widget.initialTransaction == null
-                    ? AppLocalizations.of(context).addIncome
-                    : AppLocalizations.of(context).editIncome,
-                style: theme.textTheme.titleLarge
-                    ?.copyWith(fontWeight: FontWeight.bold),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          AmountTextField(
-            controller: _amountController,
-            labelText: AppLocalizations.of(context).amount,
-            currencySymbol: currency,
-          ),
-          const SizedBox(height: 12),
-          _buildWalletDropdown(theme),
-          const SizedBox(height: 12),
-          TextField(
-            controller: _remarkController,
-            decoration: InputDecoration(
-              labelText: AppLocalizations.of(context).remarkOptional,
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: theme.colorScheme.outline),
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: theme.colorScheme.outlineVariant),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(
-                  color: theme.colorScheme.primary,
-                  width: 2,
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.add_circle_outline, color: Colors.green.shade400),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    widget.initialTransaction == null
+                        ? AppLocalizations.of(context).addIncome
+                        : AppLocalizations.of(context).editIncome,
+                    style: theme.textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            AmountTextField(
+              autofocus: widget.initialTransaction == null,
+              controller: _amountController,
+              labelText: AppLocalizations.of(context).amount,
+              currencySymbol: currency,
+            ),
+            const SizedBox(height: 12),
+            _buildWalletDropdown(theme),
+            const SizedBox(height: 12),
+            TextField(
+              controller: _remarkController,
+              decoration: InputDecoration(
+                labelText: AppLocalizations.of(context).remarkOptional,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: theme.colorScheme.outline),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(
+                    color: theme.colorScheme.outlineVariant,
+                  ),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(
+                    color: theme.colorScheme.primary,
+                    width: 2,
+                  ),
+                ),
+                filled: true,
+                fillColor: theme.colorScheme.surfaceContainerHighest,
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 14,
                 ),
               ),
-              filled: true,
-              fillColor: theme.colorScheme.surfaceContainerHighest,
-              contentPadding:
-                  const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
             ),
-          ),
-          const SizedBox(height: 20),
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              onPressed: _save,
-              style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(14),
+            const SizedBox(height: 20),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: _save,
+                style: ElevatedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                ),
+                child: Text(
+                  AppLocalizations.of(context).save,
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
-              child: Text(
-                AppLocalizations.of(context).save,
-                style:
-                    const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
-              ),
             ),
-          ),
-          const SizedBox(height: 8),
-        ],
+            const SizedBox(height: 8),
+          ],
+        ),
       ),
     );
   }

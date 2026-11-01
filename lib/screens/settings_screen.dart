@@ -2,6 +2,8 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
+import '../utils/backup_service.dart';
+import '../providers/debt_provider.dart';
 import '../providers/settings_provider.dart'
     show SettingsProvider, AppTheme, RegionPreset;
 import '../providers/transaction_provider.dart';
@@ -11,6 +13,7 @@ import '../utils/import_export_helper.dart';
 import 'package:expense_tracker/l10n/app_localizations.dart';
 
 import '../widgets/help_guide_modal.dart';
+import '../models/wallet.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -35,7 +38,10 @@ class SettingsScreen extends StatelessWidget {
           // Help & User Guide Tile
           ListTile(
             leading: const Icon(Icons.menu_book_rounded, color: Colors.amber),
-            title: Text(l10n.helpAndUserGuide, style: const TextStyle(fontWeight: FontWeight.bold)),
+            title: Text(
+              l10n.helpAndUserGuide,
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
             subtitle: Text(l10n.helpSubtitle),
             trailing: const Icon(Icons.chevron_right),
             onTap: () => HelpGuideModal.show(context),
@@ -56,8 +62,9 @@ class SettingsScreen extends StatelessWidget {
               }).toList(),
               onChanged: (id) {
                 if (id == null) return;
-                final region = SettingsProvider.regionPresets
-                    .firstWhere((r) => r.id == id);
+                final region = SettingsProvider.regionPresets.firstWhere(
+                  (r) => r.id == id,
+                );
                 settings.setRegion(region);
               },
             ),
@@ -66,8 +73,9 @@ class SettingsScreen extends StatelessWidget {
           // Theme picker
           ListTile(
             title: Text(AppLocalizations.of(context).theme),
-            subtitle:
-                Text('Current: ${settings.currentTheme.name.toUpperCase()}'),
+            subtitle: Text(
+              'Current: ${settings.currentTheme.name.toUpperCase()}',
+            ),
             trailing: DropdownButton<AppTheme>(
               value: settings.currentTheme,
               items: AppTheme.values.map((theme) {
@@ -92,6 +100,12 @@ class SettingsScreen extends StatelessWidget {
           ),
 
           const Divider(),
+
+          ListTile(
+            leading: const Icon(Icons.backup_outlined),
+            title: Text(l10n.keepDataTitle),
+            subtitle: Text(l10n.keepDataBody),
+          ),
 
           // Clear all data
           ListTile(
@@ -122,23 +136,23 @@ class SettingsScreen extends StatelessWidget {
 
   // --------------------- Clear Data ---------------------
   void _confirmClearData(BuildContext context) {
+    final l = AppLocalizations.of(context);
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
-        title: const Text('Clear all data?'),
-        content: const Text(
-            'This will permanently delete all transactions. Continue?'),
+        title: Text(l.clearAllData),
+        content: Text(l.clearAllDataConfirm),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
+            child: Text(l.cancel),
           ),
           TextButton(
             onPressed: () {
               Navigator.pop(context);
               _confirmAgain(context);
             },
-            child: const Text('Yes, clear'),
+            child: Text(l.yesClear),
           ),
         ],
       ),
@@ -146,28 +160,36 @@ class SettingsScreen extends StatelessWidget {
   }
 
   void _confirmAgain(BuildContext context) {
+    final l = AppLocalizations.of(context);
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
-        title: const Text('Are you absolutely sure?'),
-        content: const Text('This cannot be undone.'),
+        title: Text(l.areYouAbsolutelySure),
+        content: Text(l.clearAllDataConfirm),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
+            child: Text(l.cancel),
           ),
           TextButton(
             onPressed: () async {
               Navigator.pop(context);
               await DatabaseHelper().clearAll();
               if (!context.mounted) return;
-              Provider.of<TransactionProvider>(context, listen: false)
-                  .loadTransactions();
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('All data cleared')),
-              );
+              context.read<WalletProvider>().selectWallet(Wallet.cashWalletId);
+              final transactions = context.read<TransactionProvider>();
+              transactions.walletFilter = Wallet.cashWalletId;
+              await Future.wait([
+                context.read<DebtProvider>().load(),
+                context.read<WalletProvider>().loadWallets(),
+                transactions.loadTransactions(),
+              ]);
+              if (!context.mounted) return;
+              ScaffoldMessenger.of(
+                context,
+              ).showSnackBar(SnackBar(content: Text(l.allDataCleared)));
             },
-            child: const Text('DELETE', style: TextStyle(color: Colors.red)),
+            child: Text(l.delete, style: const TextStyle(color: Colors.red)),
           ),
         ],
       ),
@@ -217,41 +239,15 @@ class SettingsScreen extends StatelessWidget {
   }
 
   Future<void> _export(BuildContext context, String format) async {
-    final txnProvider =
-        Provider.of<TransactionProvider>(context, listen: false);
-    final walletProvider = Provider.of<WalletProvider>(context, listen: false);
-
-    final transactions = txnProvider.transactions;
-    if (transactions.isEmpty) {
-      if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('No transactions to export')),
-      );
-      return;
-    }
-
     try {
       // Ask user where to save
-      final selectedDirectory = await FilePicker.platform.getDirectoryPath(
+      final selectedDirectory = await FilePicker.getDirectoryPath(
         dialogTitle: 'Choose folder to save export',
       );
 
       if (selectedDirectory == null) return; // cancelled
 
-      final filePath = await ImportExportHelper.export(
-        transactions: transactions,
-        wallets: walletProvider.wallets,
-        format: format,
-        directoryPath: selectedDirectory,
-      );
-
-      if (filePath == null) {
-        if (!context.mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Export failed')),
-        );
-        return;
-      }
+      final filePath = await BackupService.export(selectedDirectory, format);
 
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -281,48 +277,40 @@ class SettingsScreen extends StatelessWidget {
       );
 
       if (shouldShare == true) {
-        await Share.shareXFiles(
-          [XFile(filePath)],
-          text: 'My transaction data from Expense Tracker',
+        await SharePlus.instance.share(
+          ShareParams(
+            files: [XFile(filePath)],
+            text: 'My transaction data from Expense Tracker',
+          ),
         );
       }
     } catch (e) {
       if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Export failed: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Export failed: $e')));
     }
   }
 
   // --------------------- Import ---------------------
   Future<void> _importData(BuildContext context) async {
     try {
-      final result = await FilePicker.platform.pickFiles(
+      final platformFile = await FilePicker.pickFile(
         type: FileType.custom,
         allowedExtensions: ['csv', 'xlsx', 'xls'],
         dialogTitle: 'Select CSV or Excel file to import',
       );
 
-      if (result == null || result.files.isEmpty) return;
-
-      final platformFile = result.files.single;
+      if (platformFile == null) return;
       String? path = platformFile.path;
 
       // On some platforms we only get bytes
-      if (path == null && platformFile.bytes != null) {
+      if (path == null) {
         final ext = platformFile.extension ?? 'csv';
         path = await ImportExportHelper.writeTempFile(
-          platformFile.bytes!,
+          await platformFile.readAsBytes(),
           ext,
         );
-      }
-
-      if (path == null) {
-        if (!context.mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Could not read the selected file')),
-        );
-        return;
       }
 
       // Confirm before importing
@@ -331,11 +319,7 @@ class SettingsScreen extends StatelessWidget {
         context: context,
         builder: (_) => AlertDialog(
           title: const Text('Import data?'),
-          content: const Text(
-            'This will ADD the transactions from the file to your existing data.\n\n'
-            'Existing transactions will NOT be deleted.\n'
-            'Duplicate rows may appear if you import the same file twice.',
-          ),
+          content: Text(AppLocalizations.of(context).backupImportConfirmation),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context, false),
@@ -360,17 +344,19 @@ class SettingsScreen extends StatelessWidget {
       );
 
       try {
-        final parsed = await ImportExportHelper.parseImportFile(path);
+        final imported = await BackupService.import(path);
 
         if (!context.mounted) return;
-        final txnProvider =
-            Provider.of<TransactionProvider>(context, listen: false);
+        final txnProvider = Provider.of<TransactionProvider>(
+          context,
+          listen: false,
+        );
 
-        int imported = 0;
-        for (final txn in parsed) {
-          await txnProvider.addTransaction(txn);
-          imported++;
-        }
+        await Future.wait([
+          txnProvider.loadTransactions(),
+          context.read<WalletProvider>().loadWallets(),
+          context.read<DebtProvider>().load(),
+        ]);
 
         if (!context.mounted) return;
         Navigator.pop(context); // close loading dialog
@@ -384,16 +370,16 @@ class SettingsScreen extends StatelessWidget {
       } catch (e) {
         if (context.mounted) {
           Navigator.pop(context); // close loading dialog
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Import failed: $e')),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text('Import failed: $e')));
         }
       }
     } catch (e) {
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Import failed: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Import failed: $e')));
       }
     }
   }

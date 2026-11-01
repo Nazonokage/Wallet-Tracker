@@ -1,8 +1,10 @@
-# Wallet Tracker (v1.8)
+# Wallet Tracker (v1.9)
+
+See [CHANGELOG.md](CHANGELOG.md) for changes and known limitations.
 
 A fast, customizable, offline-first personal expense and savings tracker built with Flutter.
 
-**Core promise:** Log transactions in seconds, manage customizable wallets with brand logos, view interactive analytics with calendar pickers, and enjoy smooth ambient UI motion.
+**Core promise:** Log transactions in seconds, manage customizable wallets with brand logos, view interactive analytics with calendar pickers, and see balances and lists immediately.
 
 No cloud sync. No accounts. No ads. Just pure speed, privacy, and full visibility over your money.
 
@@ -17,7 +19,7 @@ No cloud sync. No accounts. No ads. Just pure speed, privacy, and full visibilit
 - **Default Cash Selection**: Configured to launch with Cash wallet selected as default.
 
 ### 📱 2. Dashboard & Quick Actions
-- **Instant Balance Counter**: Dynamic numerical count-up animations for wallet balances.
+- **Instant Balance Counter**: Wallet balances display immediately without count-up animations.
 - **Swipe Gestures**:
   - **Swipe Left** → Delete transaction (with instant Undo snackbar).
   - **Swipe Right** → Edit transaction details.
@@ -34,8 +36,8 @@ No cloud sync. No accounts. No ads. Just pure speed, privacy, and full visibilit
 - **Category Progress Cards**: Detailed percentage breakdowns with category progress bars.
 
 ### 🎨 4. Dynamic Visual Theme & Motion Design
-- **Ambient Floating Particles**: GPU-accelerated background particles flowing gently across screens.
-- **Staggered Animations**: Smooth fade and slide-up entrance transitions for cards and lists.
+- **Static Backgrounds**: No decorative particle animation or background tickers.
+- **Immediate Content**: Cards and lists appear without entrance fades, slides, or delays.
 - **Multiple Color Themes**: Emerald Green, Dark Slate, Sapphire Blue, Sunset Gold, and Midnight Purple.
 - **Dark Mode**: 1-tap Dark Mode switch with full contrast support.
 
@@ -73,7 +75,7 @@ No cloud sync. No accounts. No ads. Just pure speed, privacy, and full visibilit
 ## 🚀 Getting Started
 
 ### Prerequisites
-- [Flutter SDK](https://docs.flutter.dev/get-started/install) (>= 3.0.0)
+- [Flutter SDK](https://docs.flutter.dev/get-started/install) (>= 3.38.1; this project is checked with Flutter 3.44.4 stable)
 - Android Studio / VS Code with Flutter extensions
 
 ### Run the App
@@ -87,8 +89,8 @@ cd Wallet-Tracker
 flutter pub get
 flutter gen-l10n
 
-# Run the app
-flutter run
+# Install an Android update while retaining existing app data (PowerShell)
+.\scripts\install-android.ps1
 ```
 
 ---
@@ -117,3 +119,74 @@ This project is open-source. Feel free to use, customize, and build upon it!
 ---
 
 Made with ❤️ using Flutter
+
+## Windows build setup
+
+If package resolution fails under a Windows profile containing spaces or apostrophes,
+set the user environment variable `PUB_CACHE` to a plain path such as `C:\pub_cache`.
+Restart terminals and the IDE, then run `flutter clean` and `flutter pub get`.
+Keep machine-specific cache paths out of the repository. Inspect the first build
+error before assuming the cache path is responsible.
+
+
+
+## Debts and first-install help
+
+The Debts tab records lent and borrowed money, optional flat interest, and partial
+repayments. Principal movements change the selected real wallet and stay out of
+income/expense analytics; interest counts normally. Fully paid debts archive
+automatically. Receivables and Payables show active balances in Wallets.
+The Help & User Guide opens once on the first launch and is available in Settings.
+
+The dashboard reads 50 transactions at a time, with SQL-based wallet and weekly
+totals. Analytics reads category totals on demand. Decorative motion stays disabled.
+CSV and Excel exports contain a complete versioned backup, including starting
+balances, debts and repayments. Import adds data; importing twice creates duplicates.
+Existing transaction-only backups remain accepted. Due-date notifications are pending.
+New debt translations currently use English placeholders outside English.
+
+
+## Keep data when updating or moving phones
+
+Updates use the existing SQLite file and additive versioned migrations. Startup,
+analytics filters, and APK installation do not call Clear all data. Only the
+explicit Settings reset, after two confirmations, clears the financial database;
+individual Delete actions still require the confirmations described in the guide.
+
+For Android development updates, use the PowerShell installer above. It builds an
+APK and uses adb install -r, stops on a signing mismatch, and never uninstalls or
+clears app storage. Keep the package ID and signing key unchanged between releases.
+The current project still uses the developer debug signing key for release builds;
+keep that key safe and consistent until a planned signing migration. Flutter run
+may offer to uninstall an incompatible installed package; do not use that fallback
+to resolve a signing mismatch if you need to keep the app's local data.
+
+Android cloud backup and device-to-device transfer explicitly include app_flutter
+(the database plus WAL sidecars) and preferences. Restoration depends on Android's
+backup settings, available backup, transport limits, and matching application identity.
+Installing an APK on a different phone alone does not transfer data. Export CSV or
+Excel in Settings, save the backup outside app storage, copy it to the new phone,
+and use Import Data there if Android restore is unavailable. Import adds records;
+importing twice creates duplicates. Uninstalling or clearing storage in Android can
+remove local data independently of the app, so keep an exported backup.
+
+Analytics opens with Today selected; This week uses Monday through Sunday.
+
+## Startup performance testing
+
+Preferences and wallet/history reads start concurrently. Rendering waits only for
+saved preferences, preserving the selected theme, while database results can arrive
+after the first frame. Records stay paginated and other tabs load on demand.
+
+For everyday phone use, build/install the optimized APK from PowerShell:
+
+```powershell
+.\scripts\install-android.ps1 -Release
+```
+
+This retains the same application ID/signing configuration and uses install -r.
+If installation is rejected, stop and preserve the installed app; never uninstall
+as a workaround. Compare launching from the phone icon with comparable saved data.
+Gradle build duration is separate from app startup. Phone timings for the latest
+changes remain pending: the agent environment currently hits a Gradle loopback
+connection failure and has no attached ADB device.

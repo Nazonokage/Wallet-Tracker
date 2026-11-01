@@ -1,10 +1,11 @@
 name: expense_tracker
 description: A personal expense tracker.
 publish_to: 'none'
-version: 1.8.0+6
+version: 1.9.0+7
 
 environment:
-  sdk: ">=3.0.0 <4.0.0"
+  sdk: ">=3.10.0 <4.0.0"
+  flutter: ">=3.38.1"
 
 dependencies:
   flutter:
@@ -19,7 +20,7 @@ dependencies:
 
   shared_preferences: ^2.3.2
 
-  file_picker: ^8.0.0
+  file_picker: ^13.3.1
 
   # State
   provider: ^6.1.1
@@ -30,7 +31,7 @@ dependencies:
   # CSV + XLSX + sharing
   csv: ^6.0.0
   excel: ^4.0.6
-  share_plus: ^7.2.2
+  share_plus: ^13.3.1
 
   # Utilities
   intl: any
@@ -40,6 +41,7 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^3.0.0
+  sqflite_common_ffi: ^2.4.5
 
 flutter:
   uses-material-design: true

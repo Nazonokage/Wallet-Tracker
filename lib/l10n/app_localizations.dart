@@ -68,7 +68,7 @@ import 'app_localizations_zh.dart';
 /// property.
 abstract class AppLocalizations {
   AppLocalizations(String locale)
-      : localeName = intl.Intl.canonicalizedLocale(locale.toString());
+    : localeName = intl.Intl.canonicalizedLocale(locale.toString());
 
   final String localeName;
 
@@ -91,11 +91,11 @@ abstract class AppLocalizations {
   /// of delegates is preferred or required.
   static const List<LocalizationsDelegate<dynamic>> localizationsDelegates =
       <LocalizationsDelegate<dynamic>>[
-    delegate,
-    GlobalMaterialLocalizations.delegate,
-    GlobalCupertinoLocalizations.delegate,
-    GlobalWidgetsLocalizations.delegate,
-  ];
+        delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+      ];
 
   /// A list of this localizations delegate's supported locales.
   static const List<Locale> supportedLocales = <Locale>[
@@ -105,7 +105,7 @@ abstract class AppLocalizations {
     Locale('fr'),
     Locale('ja'),
     Locale('pt'),
-    Locale('zh')
+    Locale('zh'),
   ];
 
   /// No description provided for @appTitle.
@@ -393,7 +393,7 @@ abstract class AppLocalizations {
   /// No description provided for @clearAllDataConfirm.
   ///
   /// In en, this message translates to:
-  /// **'This will permanently delete all transactions. Continue?'**
+  /// **'This permanently removes transactions, debts, repayments, contacts and budgets, removes custom wallets, and resets Cash to zero. Export a backup first.'**
   String get clearAllDataConfirm;
 
   /// No description provided for @yesClear.
@@ -707,6 +707,348 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Add Customizable Wallet'**
   String get addCustomizableWallet;
+
+  /// No description provided for @debts.
+  ///
+  /// In en, this message translates to:
+  /// **'Debts'**
+  String get debts;
+
+  /// No description provided for @iou.
+  ///
+  /// In en, this message translates to:
+  /// **'IOU'**
+  String get iou;
+
+  /// No description provided for @lent.
+  ///
+  /// In en, this message translates to:
+  /// **'Lent'**
+  String get lent;
+
+  /// No description provided for @borrowed.
+  ///
+  /// In en, this message translates to:
+  /// **'Borrowed'**
+  String get borrowed;
+
+  /// No description provided for @outstanding.
+  ///
+  /// In en, this message translates to:
+  /// **'Outstanding'**
+  String get outstanding;
+
+  /// No description provided for @partial.
+  ///
+  /// In en, this message translates to:
+  /// **'Partial'**
+  String get partial;
+
+  /// No description provided for @archived.
+  ///
+  /// In en, this message translates to:
+  /// **'Archived'**
+  String get archived;
+
+  /// No description provided for @owedToYou.
+  ///
+  /// In en, this message translates to:
+  /// **'Owed to you'**
+  String get owedToYou;
+
+  /// No description provided for @youOwe.
+  ///
+  /// In en, this message translates to:
+  /// **'You owe'**
+  String get youOwe;
+
+  /// No description provided for @receivables.
+  ///
+  /// In en, this message translates to:
+  /// **'Receivables'**
+  String get receivables;
+
+  /// No description provided for @payables.
+  ///
+  /// In en, this message translates to:
+  /// **'Payables'**
+  String get payables;
+
+  /// No description provided for @noDebts.
+  ///
+  /// In en, this message translates to:
+  /// **'No debts yet. Tap + IOU to record one.'**
+  String get noDebts;
+
+  /// No description provided for @person.
+  ///
+  /// In en, this message translates to:
+  /// **'Person'**
+  String get person;
+
+  /// No description provided for @interest.
+  ///
+  /// In en, this message translates to:
+  /// **'Flat interest'**
+  String get interest;
+
+  /// No description provided for @interestRate.
+  ///
+  /// In en, this message translates to:
+  /// **'Interest (%)'**
+  String get interestRate;
+
+  /// No description provided for @totalDue.
+  ///
+  /// In en, this message translates to:
+  /// **'Total due'**
+  String get totalDue;
+
+  /// No description provided for @dueDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Due date (optional)'**
+  String get dueDate;
+
+  /// No description provided for @note.
+  ///
+  /// In en, this message translates to:
+  /// **'Note (optional)'**
+  String get note;
+
+  /// No description provided for @recordRepayment.
+  ///
+  /// In en, this message translates to:
+  /// **'Record repayment'**
+  String get recordRepayment;
+
+  /// No description provided for @repaymentRecorded.
+  ///
+  /// In en, this message translates to:
+  /// **'Repayment recorded'**
+  String get repaymentRecorded;
+
+  /// No description provided for @markAsPaid.
+  ///
+  /// In en, this message translates to:
+  /// **'Mark as paid'**
+  String get markAsPaid;
+
+  /// No description provided for @markedAsPaid.
+  ///
+  /// In en, this message translates to:
+  /// **'Marked as paid'**
+  String get markedAsPaid;
+
+  /// No description provided for @archive.
+  ///
+  /// In en, this message translates to:
+  /// **'Archive'**
+  String get archive;
+
+  /// No description provided for @archiveConfirmation.
+  ///
+  /// In en, this message translates to:
+  /// **'Archive this debt? It will leave active totals. Wallet movements stay unchanged.'**
+  String get archiveConfirmation;
+
+  /// No description provided for @paidConfirmation.
+  ///
+  /// In en, this message translates to:
+  /// **'Record the full remaining amount as a repayment?'**
+  String get paidConfirmation;
+
+  /// No description provided for @debtSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Debt saved'**
+  String get debtSaved;
+
+  /// No description provided for @debtError.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not save the change. Check the amount and wallet, then retry.'**
+  String get debtError;
+
+  /// No description provided for @loadError.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load data. Tap retry.'**
+  String get loadError;
+
+  /// No description provided for @retry.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry'**
+  String get retry;
+
+  /// No description provided for @loadMore.
+  ///
+  /// In en, this message translates to:
+  /// **'Load more'**
+  String get loadMore;
+
+  /// No description provided for @debtLocked.
+  ///
+  /// In en, this message translates to:
+  /// **'Amount, interest, direction and wallet cannot change after a repayment.'**
+  String get debtLocked;
+
+  /// No description provided for @repaymentAmount.
+  ///
+  /// In en, this message translates to:
+  /// **'Repayment amount'**
+  String get repaymentAmount;
+
+  /// No description provided for @debtAmountInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter an amount greater than zero, up to the remaining balance.'**
+  String get debtAmountInvalid;
+
+  /// No description provided for @debtGuide.
+  ///
+  /// In en, this message translates to:
+  /// **'Record money lent or borrowed using a real wallet. Optional interest is a flat percentage, off by default. Repayments pay principal first. Principal movements change your wallet balance but stay out of spending analytics; interest counts as income or expense. Fully repaid debts are archived automatically. Use CSV or Excel export to back up debts and repayments.'**
+  String get debtGuide;
+
+  /// No description provided for @debtOverdue.
+  ///
+  /// In en, this message translates to:
+  /// **'Overdue {days} days'**
+  String debtOverdue(int days);
+
+  /// No description provided for @debtDue.
+  ///
+  /// In en, this message translates to:
+  /// **'Due {date}'**
+  String debtDue(String date);
+
+  /// No description provided for @debtPaid.
+  ///
+  /// In en, this message translates to:
+  /// **'Paid {amount}'**
+  String debtPaid(String amount);
+
+  /// No description provided for @debtDelete.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete debt'**
+  String get debtDelete;
+
+  /// No description provided for @debtDeleteConfirmation.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete this debt and reverse all its recorded wallet movements?'**
+  String get debtDeleteConfirmation;
+
+  /// No description provided for @debtDeleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Debt deleted'**
+  String get debtDeleted;
+
+  /// No description provided for @debtWalletInUse.
+  ///
+  /// In en, this message translates to:
+  /// **'This wallet has debt records. Keep it to preserve their payment history.'**
+  String get debtWalletInUse;
+
+  /// No description provided for @backupImported.
+  ///
+  /// In en, this message translates to:
+  /// **'Backup imported'**
+  String get backupImported;
+
+  /// No description provided for @backupGuide.
+  ///
+  /// In en, this message translates to:
+  /// **'Data and backup'**
+  String get backupGuide;
+
+  /// No description provided for @edit.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit'**
+  String get edit;
+
+  /// No description provided for @backupImportConfirmation.
+  ///
+  /// In en, this message translates to:
+  /// **'This adds the backup to your existing data, including wallet starting balances, transactions, debts and repayments. Existing records stay. Importing the same backup twice creates duplicates.'**
+  String get backupImportConfirmation;
+
+  /// No description provided for @recordDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'Record details'**
+  String get recordDetails;
+
+  /// No description provided for @transactionType.
+  ///
+  /// In en, this message translates to:
+  /// **'Type'**
+  String get transactionType;
+
+  /// No description provided for @recordedAt.
+  ///
+  /// In en, this message translates to:
+  /// **'Timestamp'**
+  String get recordedAt;
+
+  /// No description provided for @transactionCategory.
+  ///
+  /// In en, this message translates to:
+  /// **'Category'**
+  String get transactionCategory;
+
+  /// No description provided for @remarkLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Remark'**
+  String get remarkLabel;
+
+  /// No description provided for @incomeLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Income'**
+  String get incomeLabel;
+
+  /// No description provided for @expenseLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Expense'**
+  String get expenseLabel;
+
+  /// No description provided for @openDebt.
+  ///
+  /// In en, this message translates to:
+  /// **'Open debt'**
+  String get openDebt;
+
+  /// No description provided for @managedDebtRecord.
+  ///
+  /// In en, this message translates to:
+  /// **'This movement belongs to a debt. Open the debt to edit it or delete its linked records together.'**
+  String get managedDebtRecord;
+
+  /// No description provided for @thisWeekFilter.
+  ///
+  /// In en, this message translates to:
+  /// **'This week'**
+  String get thisWeekFilter;
+
+  /// No description provided for @keepDataTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep your data'**
+  String get keepDataTitle;
+
+  /// No description provided for @keepDataBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Updates retain your records. For a new phone, restore an Android backup or export here and import that file on the new phone. Keep the backup outside the app.'**
+  String get keepDataBody;
 }
 
 class _AppLocalizationsDelegate
@@ -720,14 +1062,14 @@ class _AppLocalizationsDelegate
 
   @override
   bool isSupported(Locale locale) => <String>[
-        'de',
-        'en',
-        'es',
-        'fr',
-        'ja',
-        'pt',
-        'zh'
-      ].contains(locale.languageCode);
+    'de',
+    'en',
+    'es',
+    'fr',
+    'ja',
+    'pt',
+    'zh',
+  ].contains(locale.languageCode);
 
   @override
   bool shouldReload(_AppLocalizationsDelegate old) => false;
@@ -753,8 +1095,9 @@ AppLocalizations lookupAppLocalizations(Locale locale) {
   }
 
   throw FlutterError(
-      'AppLocalizations.delegate failed to load unsupported locale "$locale". This is likely '
-      'an issue with the localizations generation tool. Please file an issue '
-      'on GitHub with a reproducible sample app and the gen-l10n configuration '
-      'that was used.');
+    'AppLocalizations.delegate failed to load unsupported locale "$locale". This is likely '
+    'an issue with the localizations generation tool. Please file an issue '
+    'on GitHub with a reproducible sample app and the gen-l10n configuration '
+    'that was used.',
+  );
 }

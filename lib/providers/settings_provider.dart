@@ -1,13 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-enum AppTheme {
-  mint,
-  sunset,
-  ocean,
-  lavender,
-  rose,
-}
+enum AppTheme { mint, sunset, ocean, lavender, rose }
 
 /// Combined language + currency preset with a flag emoji.
 class RegionPreset {
@@ -152,9 +146,9 @@ class SettingsProvider extends ChangeNotifier {
     Locale('pt'),
   ];
 
-  SettingsProvider() {
-    _loadSettings();
-  }
+  SettingsProvider();
+
+  Future<void> loadSettings() => _loadSettings();
 
   Future<void> _loadSettings() async {
     final prefs = await SharedPreferences.getInstance();

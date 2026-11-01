@@ -41,7 +41,8 @@ class _ExpenseModalState extends State<ExpenseModal> {
     super.initState();
     _cashGivenController.addListener(_calculateFromChange);
     _cashReceivedController.addListener(_calculateFromChange);
-    _selectedWalletId = widget.initialTransaction?.walletId ??
+    _selectedWalletId =
+        widget.initialTransaction?.walletId ??
         widget.defaultWalletId ??
         Wallet.cashWalletId;
 
@@ -96,8 +97,10 @@ class _ExpenseModalState extends State<ExpenseModal> {
     if (threshold != null && rawAmount > threshold) {
       final l10n = AppLocalizations.of(context);
       final categoryName = _selectedCategory.name;
-      final currency =
-          Provider.of<SettingsProvider>(context, listen: false).currencySymbol;
+      final currency = Provider.of<SettingsProvider>(
+        context,
+        listen: false,
+      ).currencySymbol;
       final confirmed = await showDialog<bool>(
         context: context,
         builder: (ctx) => AlertDialog(
@@ -148,6 +151,7 @@ class _ExpenseModalState extends State<ExpenseModal> {
             ? _selectedWalletId
             : Wallet.cashWalletId;
         return DropdownButtonFormField<int>(
+          isExpanded: true,
           initialValue: validId,
           items: wallets.map((w) {
             return DropdownMenuItem<int>(
@@ -168,15 +172,14 @@ class _ExpenseModalState extends State<ExpenseModal> {
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(
-                color: _expenseAccent,
-                width: 2,
-              ),
+              borderSide: const BorderSide(color: _expenseAccent, width: 2),
             ),
             filled: true,
             fillColor: theme.colorScheme.surfaceContainerHighest,
-            contentPadding:
-                const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 10,
+            ),
           ),
         );
       },
@@ -187,10 +190,9 @@ class _ExpenseModalState extends State<ExpenseModal> {
   Widget build(BuildContext context) {
     final currency = Provider.of<SettingsProvider>(context).currencySymbol;
     final theme = Theme.of(context);
-    final bottomInset = MediaQuery.of(context).viewInsets.bottom;
 
     return Padding(
-      padding: EdgeInsets.fromLTRB(20, 20, 20, 20 + bottomInset),
+      padding: const EdgeInsets.all(20),
       child: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -200,12 +202,15 @@ class _ExpenseModalState extends State<ExpenseModal> {
               children: [
                 const Icon(Icons.remove_circle_outline, color: _expenseAccent),
                 const SizedBox(width: 8),
-                Text(
-                  widget.initialTransaction == null
-                      ? AppLocalizations.of(context).addExpense
-                      : AppLocalizations.of(context).editExpense,
-                  style: theme.textTheme.titleLarge
-                      ?.copyWith(fontWeight: FontWeight.bold),
+                Expanded(
+                  child: Text(
+                    widget.initialTransaction == null
+                        ? AppLocalizations.of(context).addExpense
+                        : AppLocalizations.of(context).editExpense,
+                    style: theme.textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                 ),
               ],
             ),
@@ -295,7 +300,9 @@ class _ExpenseModalState extends State<ExpenseModal> {
                 child: Text(
                   AppLocalizations.of(context).save,
                   style: const TextStyle(
-                      fontSize: 18, fontWeight: FontWeight.w600),
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
             ),
@@ -312,6 +319,7 @@ class _ExpenseModalState extends State<ExpenseModal> {
       children: [
         AmountTextField(
           controller: _amountController,
+          autofocus: widget.initialTransaction == null,
           labelText: AppLocalizations.of(context).amount,
           currencySymbol: currency,
         ),
@@ -334,15 +342,14 @@ class _ExpenseModalState extends State<ExpenseModal> {
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(
-                color: _expenseAccent,
-                width: 2,
-              ),
+              borderSide: const BorderSide(color: _expenseAccent, width: 2),
             ),
             filled: true,
             fillColor: theme.colorScheme.surfaceContainerHighest,
-            contentPadding:
-                const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 14,
+            ),
           ),
         ),
       ],
@@ -359,6 +366,7 @@ class _ExpenseModalState extends State<ExpenseModal> {
       children: [
         AmountTextField(
           controller: _cashGivenController,
+          autofocus: true,
           labelText: AppLocalizations.of(context).cashGiven,
           currencySymbol: currency,
         ),
@@ -374,9 +382,7 @@ class _ExpenseModalState extends State<ExpenseModal> {
           decoration: BoxDecoration(
             color: _expenseAccent.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: _expenseAccent.withValues(alpha: 0.3),
-            ),
+            border: Border.all(color: _expenseAccent.withValues(alpha: 0.3)),
           ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -418,15 +424,14 @@ class _ExpenseModalState extends State<ExpenseModal> {
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(
-                color: _expenseAccent,
-                width: 2,
-              ),
+              borderSide: const BorderSide(color: _expenseAccent, width: 2),
             ),
             filled: true,
             fillColor: theme.colorScheme.surfaceContainerHighest,
-            contentPadding:
-                const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 14,
+            ),
           ),
         ),
       ],
@@ -435,12 +440,14 @@ class _ExpenseModalState extends State<ExpenseModal> {
 
   Widget _buildCategoryDropdown(ThemeData theme) {
     return DropdownButtonFormField<Category>(
+      isExpanded: true,
       initialValue: _selectedCategory,
       items: Category.values.map((cat) {
         return DropdownMenuItem<Category>(
           value: cat,
-          child:
-              Text('${_categoryEmoji(cat)} ${cat.toString().split('.').last}'),
+          child: Text(
+            '${_categoryEmoji(cat)} ${cat.toString().split('.').last}',
+          ),
         );
       }).toList(),
       onChanged: (val) => setState(() => _selectedCategory = val!),
@@ -456,15 +463,14 @@ class _ExpenseModalState extends State<ExpenseModal> {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(
-            color: _expenseAccent,
-            width: 2,
-          ),
+          borderSide: const BorderSide(color: _expenseAccent, width: 2),
         ),
         filled: true,
         fillColor: theme.colorScheme.surfaceContainerHighest,
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 10,
+        ),
       ),
     );
   }

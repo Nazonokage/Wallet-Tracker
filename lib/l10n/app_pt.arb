@@ -47,7 +47,7 @@
   "addExpensesForAnalytics": "Adicione despesas para ver as análises",
   "spendingByCategory": "Gastos por categoria",
   "clearAllData": "Limpar todos os dados",
-  "clearAllDataConfirm": "Isso excluirá permanentemente todas as transações. Continuar?",
+  "clearAllDataConfirm": "Isto elimina permanentemente transações, dívidas, pagamentos, contactos, orçamentos e carteiras personalizadas, e repõe o dinheiro a zero. Exporte primeiro uma cópia.",
   "yesClear": "Sim, limpar",
   "areYouAbsolutelySure": "Tem certeza absoluta?",
   "cannotBeUndone": "Isso não pode ser desfeito.",
@@ -99,5 +99,83 @@
   "noWalletsFound": "Nenhuma carteira encontrada",
   "addYourFirstWallet": "Adicione sua primeira carteira",
   "accounts": "Contas",
-  "addCustomizableWallet": "Adicionar Carteira Personalizável"
+  "addCustomizableWallet": "Adicionar Carteira Personalizável",
+  "debts": "Debts",
+  "iou": "IOU",
+  "lent": "Lent",
+  "borrowed": "Borrowed",
+  "outstanding": "Outstanding",
+  "partial": "Partial",
+  "archived": "Archived",
+  "owedToYou": "Owed to you",
+  "youOwe": "You owe",
+  "receivables": "Receivables",
+  "payables": "Payables",
+  "noDebts": "No debts yet. Tap + IOU to record one.",
+  "person": "Person",
+  "interest": "Flat interest",
+  "interestRate": "Interest (%)",
+  "totalDue": "Total due",
+  "dueDate": "Due date (optional)",
+  "note": "Note (optional)",
+  "recordRepayment": "Record repayment",
+  "repaymentRecorded": "Repayment recorded",
+  "markAsPaid": "Mark as paid",
+  "markedAsPaid": "Marked as paid",
+  "archive": "Archive",
+  "archiveConfirmation": "Archive this debt? It will leave active totals. Wallet movements stay unchanged.",
+  "paidConfirmation": "Record the full remaining amount as a repayment?",
+  "debtSaved": "Debt saved",
+  "debtError": "Could not save the change. Check the amount and wallet, then retry.",
+  "loadError": "Could not load data. Tap retry.",
+  "retry": "Retry",
+  "loadMore": "Load more",
+  "debtLocked": "Amount, interest, direction and wallet cannot change after a repayment.",
+  "repaymentAmount": "Repayment amount",
+  "debtAmountInvalid": "Enter an amount greater than zero, up to the remaining balance.",
+  "debtGuide": "Record money lent or borrowed using a real wallet. Optional interest is a flat percentage, off by default. Repayments pay principal first. Principal movements change your wallet balance but stay out of spending analytics; interest counts as income or expense. Fully repaid debts are archived automatically. Use CSV or Excel export to back up debts and repayments.",
+  "debtOverdue": "Overdue {days} days",
+  "debtDue": "Due {date}",
+  "debtPaid": "Paid {amount}",
+  "debtDelete": "Delete debt",
+  "debtDeleteConfirmation": "Delete this debt and reverse all its recorded wallet movements?",
+  "debtDeleted": "Debt deleted",
+  "debtWalletInUse": "This wallet has debt records. Keep it to preserve their payment history.",
+  "backupImported": "Backup imported",
+  "backupGuide": "Data and backup",
+  "@debtOverdue": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "@debtDue": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "@debtPaid": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "edit": "Edit",
+  "backupImportConfirmation": "This adds the backup to your existing data, including wallet starting balances, transactions, debts and repayments. Existing records stay. Importing the same backup twice creates duplicates.",
+  "recordDetails": "Detalhes do registo",
+  "transactionType": "Tipo",
+  "recordedAt": "Data e hora",
+  "transactionCategory": "Categoria",
+  "remarkLabel": "Observação",
+  "incomeLabel": "Receita",
+  "expenseLabel": "Despesa",
+  "openDebt": "Abrir dívida",
+  "managedDebtRecord": "Este movimento pertence a uma dívida. Abra a dívida para editar ou eliminar os registos associados em conjunto.",
+  "thisWeekFilter": "Esta semana",
+  "keepDataTitle": "Manter os dados",
+  "keepDataBody": "As atualizações mantêm os registos. Num novo telemóvel, restaure uma cópia Android ou exporte aqui e importe o ficheiro no novo telemóvel. Guarde a cópia fora da aplicação."
 }

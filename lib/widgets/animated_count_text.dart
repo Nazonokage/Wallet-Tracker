@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../utils/formatter.dart';
 
+/// Displays balances immediately without a count-up ticker.
 class AnimatedCountText extends StatelessWidget {
   final double value;
   final String prefix;
@@ -12,21 +13,10 @@ class AnimatedCountText extends StatelessWidget {
     required this.value,
     this.prefix = '',
     this.style,
-    this.duration = const Duration(milliseconds: 600),
+    this.duration = Duration.zero,
   });
 
   @override
-  Widget build(BuildContext context) {
-    return TweenAnimationBuilder<double>(
-      tween: Tween<double>(begin: 0.0, end: value),
-      duration: duration,
-      curve: Curves.easeOutCubic,
-      builder: (context, animatedValue, child) {
-        return Text(
-          '$prefix${formatAmount(animatedValue)}',
-          style: style,
-        );
-      },
-    );
-  }
+  Widget build(BuildContext context) =>
+      Text('$prefix${formatAmount(value)}', style: style);
 }

@@ -3,6 +3,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart';
 import '../models/transaction.dart';
 import '../models/wallet.dart';
+import 'debt_store.dart';
 
 class DatabaseHelper {
   static final DatabaseHelper _instance = DatabaseHelper._internal();
@@ -10,21 +11,45 @@ class DatabaseHelper {
   DatabaseHelper._internal();
 
   static sql.Database? _database;
+  static Future<sql.Database>? _opening;
 
   Future<sql.Database> get database async {
     if (_database != null) return _database!;
-    _database = await _initDatabase();
-    return _database!;
+    final pending = _opening ??= _initDatabase();
+    try {
+      return _database = await pending;
+    } finally {
+      _opening = null;
+    }
   }
 
   Future<sql.Database> _initDatabase() async {
     final directory = await getApplicationDocumentsDirectory();
     final path = join(directory.path, 'expense_tracker.db');
-    return await sql.openDatabase(
+    return openAt(path);
+  }
+
+  Future<sql.Database> openAt(
+    String path, {
+    sql.DatabaseFactory? factory,
+  }) async {
+    return await (factory ?? sql.databaseFactory).openDatabase(
       path,
-      version: 3, // ✅ bumped: version 3 adds customizable wallet fields (category, color, subtitle)
-      onCreate: _onCreate,
-      onUpgrade: _onUpgrade,
+      options: sql.OpenDatabaseOptions(
+        version: 4,
+        onConfigure: (db) async {
+          await db.execute("PRAGMA foreign_keys = ON");
+          await db.rawQuery("PRAGMA journal_mode=WAL");
+        },
+        onCreate: _onCreate,
+        onUpgrade: _onUpgrade,
+        // Never recreate storage to make an older binary open a newer database.
+        onDowngrade: (db, oldVersion, newVersion) async {
+          throw StateError(
+            'Database downgrade blocked: $oldVersion -> $newVersion',
+          );
+        },
+      ),
     );
   }
 
@@ -63,6 +88,7 @@ class DatabaseHelper {
         wallet_id INTEGER NOT NULL DEFAULT ${Wallet.cashWalletId}
       )
     ''');
+    await DebtStore.migrate(db);
   }
 
   Future<void> _onUpgrade(
@@ -136,12 +162,21 @@ class DatabaseHelper {
         whereArgs: [Wallet.cashWalletId],
       );
     }
+    if (oldVersion < 4) await DebtStore.migrate(db);
   }
 
   // ---------- Transactions ----------
 
   Future<int> insertTransaction(Transaction txn) async {
     final db = await database;
+    if (txn.isDebtManaged) throw StateError('debt');
+    final realWallet = await db.query(
+      'wallets',
+      where: 'id = ? AND is_system = 0',
+      whereArgs: [txn.walletId],
+      limit: 1,
+    );
+    if (realWallet.isEmpty) throw StateError('wallet');
     return await db.insert('transactions', txn.toMap());
   }
 
@@ -156,44 +191,72 @@ class DatabaseHelper {
 
   Future<int> updateTransaction(Transaction txn) async {
     final db = await database;
+    if (txn.isDebtManaged) throw StateError('debt');
     return await db.update(
       'transactions',
       txn.toMap(),
-      where: 'id = ?',
+      where: 'id = ? AND debt_id IS NULL AND debt_repayment_id IS NULL',
       whereArgs: [txn.id],
     );
   }
 
   Future<int> deleteTransaction(int id) async {
     final db = await database;
-    return await db.delete('transactions', where: 'id = ?', whereArgs: [id]);
+    return await db.delete(
+      'transactions',
+      where: 'id = ? AND debt_id IS NULL AND debt_repayment_id IS NULL',
+      whereArgs: [id],
+    );
   }
 
-  Future<void> clearAll() async {
-    final db = await database;
-    await db.delete('transactions');
+  // Only Settings' explicit, twice-confirmed reset calls this during normal use.
+  Future<void> clearAll({sql.Database? connection}) async {
+    final db = connection ?? await database;
+    await db.transaction((tx) async {
+      await tx.delete('transactions');
+      await tx.delete('debts');
+      await tx.delete('contacts');
+      await tx.delete('budgets');
+      await tx.delete(
+        'wallets',
+        where: 'is_system = 0 AND id != ?',
+        whereArgs: [Wallet.cashWalletId],
+      );
+      await tx.update(
+        'wallets',
+        {'initialBalance': 0.0},
+        where: 'id = ?',
+        whereArgs: [Wallet.cashWalletId],
+      );
+    });
   }
 
   // ---------- Wallets ----------
 
   Future<int> insertWallet(Wallet wallet) async {
     final db = await database;
+    if (wallet.isSystem) throw StateError('wallet');
     final map = wallet.toMap()..remove('id');
     return await db.insert('wallets', map);
   }
 
   Future<List<Wallet>> getAllWallets() async {
     final db = await database;
-    final maps = await db.query('wallets', orderBy: 'id ASC');
+    final maps = await db.query(
+      'wallets',
+      where: 'is_system = 0',
+      orderBy: 'id ASC',
+    );
     return maps.map((m) => Wallet.fromMap(m)).toList();
   }
 
   Future<int> updateWallet(Wallet wallet) async {
     final db = await database;
+    if (wallet.isSystem) throw StateError('wallet');
     return await db.update(
       'wallets',
       wallet.toMap(),
-      where: 'id = ?',
+      where: 'id = ? AND is_system = 0',
       whereArgs: [wallet.id],
     );
   }
@@ -203,7 +266,25 @@ class DatabaseHelper {
   /// that's guarded against up in WalletProvider before this is called.
   Future<void> deleteWallet(int id) async {
     final db = await database;
-    await db.delete('transactions', where: 'wallet_id = ?', whereArgs: [id]);
-    await db.delete('wallets', where: 'id = ?', whereArgs: [id]);
+    await db.transaction((tx) async {
+      final debts = await tx.query(
+        'debts',
+        where: 'wallet_id = ?',
+        whereArgs: [id],
+        limit: 1,
+      );
+      final wallet = (await tx.query(
+        'wallets',
+        where: 'id = ?',
+        whereArgs: [id],
+      )).single;
+      if (id == Wallet.cashWalletId ||
+          wallet['is_system'] == 1 ||
+          debts.isNotEmpty) {
+        throw StateError('wallet');
+      }
+      await tx.delete('transactions', where: 'wallet_id = ?', whereArgs: [id]);
+      await tx.delete('wallets', where: 'id = ?', whereArgs: [id]);
+    });
   }
 }

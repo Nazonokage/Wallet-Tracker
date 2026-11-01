@@ -160,7 +160,7 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get clearAllDataConfirm =>
-      'Esto eliminará permanentemente todas las transacciones. ¿Continuar?';
+      'Esto elimina permanentemente las transacciones, deudas, pagos, contactos, presupuestos y carteras personalizadas, y restablece el efectivo a cero. Exporta una copia primero.';
 
   @override
   String get yesClear => 'Sí, borrar';
@@ -318,4 +318,192 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get addCustomizableWallet => 'Agregar Billetera Personalizada';
+
+  @override
+  String get debts => 'Debts';
+
+  @override
+  String get iou => 'IOU';
+
+  @override
+  String get lent => 'Lent';
+
+  @override
+  String get borrowed => 'Borrowed';
+
+  @override
+  String get outstanding => 'Outstanding';
+
+  @override
+  String get partial => 'Partial';
+
+  @override
+  String get archived => 'Archived';
+
+  @override
+  String get owedToYou => 'Owed to you';
+
+  @override
+  String get youOwe => 'You owe';
+
+  @override
+  String get receivables => 'Receivables';
+
+  @override
+  String get payables => 'Payables';
+
+  @override
+  String get noDebts => 'No debts yet. Tap + IOU to record one.';
+
+  @override
+  String get person => 'Person';
+
+  @override
+  String get interest => 'Flat interest';
+
+  @override
+  String get interestRate => 'Interest (%)';
+
+  @override
+  String get totalDue => 'Total due';
+
+  @override
+  String get dueDate => 'Due date (optional)';
+
+  @override
+  String get note => 'Note (optional)';
+
+  @override
+  String get recordRepayment => 'Record repayment';
+
+  @override
+  String get repaymentRecorded => 'Repayment recorded';
+
+  @override
+  String get markAsPaid => 'Mark as paid';
+
+  @override
+  String get markedAsPaid => 'Marked as paid';
+
+  @override
+  String get archive => 'Archive';
+
+  @override
+  String get archiveConfirmation =>
+      'Archive this debt? It will leave active totals. Wallet movements stay unchanged.';
+
+  @override
+  String get paidConfirmation =>
+      'Record the full remaining amount as a repayment?';
+
+  @override
+  String get debtSaved => 'Debt saved';
+
+  @override
+  String get debtError =>
+      'Could not save the change. Check the amount and wallet, then retry.';
+
+  @override
+  String get loadError => 'Could not load data. Tap retry.';
+
+  @override
+  String get retry => 'Retry';
+
+  @override
+  String get loadMore => 'Load more';
+
+  @override
+  String get debtLocked =>
+      'Amount, interest, direction and wallet cannot change after a repayment.';
+
+  @override
+  String get repaymentAmount => 'Repayment amount';
+
+  @override
+  String get debtAmountInvalid =>
+      'Enter an amount greater than zero, up to the remaining balance.';
+
+  @override
+  String get debtGuide =>
+      'Record money lent or borrowed using a real wallet. Optional interest is a flat percentage, off by default. Repayments pay principal first. Principal movements change your wallet balance but stay out of spending analytics; interest counts as income or expense. Fully repaid debts are archived automatically. Use CSV or Excel export to back up debts and repayments.';
+
+  @override
+  String debtOverdue(int days) {
+    return 'Overdue $days days';
+  }
+
+  @override
+  String debtDue(String date) {
+    return 'Due $date';
+  }
+
+  @override
+  String debtPaid(String amount) {
+    return 'Paid $amount';
+  }
+
+  @override
+  String get debtDelete => 'Delete debt';
+
+  @override
+  String get debtDeleteConfirmation =>
+      'Delete this debt and reverse all its recorded wallet movements?';
+
+  @override
+  String get debtDeleted => 'Debt deleted';
+
+  @override
+  String get debtWalletInUse =>
+      'This wallet has debt records. Keep it to preserve their payment history.';
+
+  @override
+  String get backupImported => 'Backup imported';
+
+  @override
+  String get backupGuide => 'Data and backup';
+
+  @override
+  String get edit => 'Edit';
+
+  @override
+  String get backupImportConfirmation =>
+      'This adds the backup to your existing data, including wallet starting balances, transactions, debts and repayments. Existing records stay. Importing the same backup twice creates duplicates.';
+
+  @override
+  String get recordDetails => 'Detalles del registro';
+
+  @override
+  String get transactionType => 'Tipo';
+
+  @override
+  String get recordedAt => 'Fecha y hora';
+
+  @override
+  String get transactionCategory => 'Categoría';
+
+  @override
+  String get remarkLabel => 'Nota';
+
+  @override
+  String get incomeLabel => 'Ingreso';
+
+  @override
+  String get expenseLabel => 'Gasto';
+
+  @override
+  String get openDebt => 'Abrir deuda';
+
+  @override
+  String get managedDebtRecord =>
+      'Este movimiento pertenece a una deuda. Abre la deuda para editarla o eliminar sus registros vinculados juntos.';
+
+  @override
+  String get thisWeekFilter => 'Esta semana';
+
+  @override
+  String get keepDataTitle => 'Conservar tus datos';
+
+  @override
+  String get keepDataBody =>
+      'Las actualizaciones conservan tus registros. En un teléfono nuevo, restaura una copia de Android o exporta aquí e importa el archivo en el nuevo teléfono. Guarda la copia fuera de la aplicación.';
 }

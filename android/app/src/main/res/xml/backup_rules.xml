@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<full-backup-content>
+    <!-- path_provider stores the SQLite database and WAL sidecars in app_flutter. -->
+    <include domain="root" path="app_flutter/" />
+    <include domain="sharedpref" path="." />
+    <include domain="file" path="datastore/" />
+</full-backup-content>

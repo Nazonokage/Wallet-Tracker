@@ -10,8 +10,9 @@ import '../utils/formatter.dart';
 import '../widgets/particle_background.dart';
 import '../widgets/animated_count_text.dart';
 import '../widgets/fade_in_slide.dart';
-
-enum AnalyticsDateFilter { allTime, thisMonth, today, custom }
+import '../db/database_helper.dart';
+import '../db/transaction_queries.dart';
+import '../utils/analytics_period.dart';
 
 enum ChartType { doughnut, bar }
 
@@ -23,7 +24,7 @@ class AnalyticsScreen extends StatefulWidget {
 }
 
 class _AnalyticsScreenState extends State<AnalyticsScreen> {
-  AnalyticsDateFilter _dateFilter = AnalyticsDateFilter.allTime;
+  AnalyticsDateFilter _dateFilter = AnalyticsDateFilter.today;
   ChartType _chartType = ChartType.doughnut;
   DateTimeRange? _customDateRange;
   int _touchedIndex = -1;
@@ -77,42 +78,42 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
     return a.year == b.year && a.month == b.month && a.day == b.day;
   }
 
-  List<Transaction> _filterExpenses(List<Transaction> allTransactions) {
-    final expenses = allTransactions
-        .where((t) => t.type == TransactionType.expense)
-        .toList();
-
+  Future<Map<Category, double>>? _categoryFuture;
+  String? _queryKey;
+  Future<Map<Category, double>> _categories(int revision) {
     final now = DateTime.now();
-
-    switch (_dateFilter) {
-      case AnalyticsDateFilter.today:
-        return expenses.where((t) => _isSameDay(t.date, now)).toList();
-      case AnalyticsDateFilter.thisMonth:
-        return expenses
-            .where((t) => t.date.year == now.year && t.date.month == now.month)
-            .toList();
-      case AnalyticsDateFilter.custom:
-        if (_customDateRange == null) return expenses;
-        final start = DateTime(_customDateRange!.start.year,
-            _customDateRange!.start.month, _customDateRange!.start.day, 0, 0, 0);
-        final end = DateTime(_customDateRange!.end.year,
-            _customDateRange!.end.month, _customDateRange!.end.day, 23, 59, 59);
-        return expenses
-            .where((t) => t.date.isAfter(start.subtract(const Duration(seconds: 1))) &&
-                t.date.isBefore(end.add(const Duration(seconds: 1))))
-            .toList();
-      case AnalyticsDateFilter.allTime:
-        return expenses;
+    final key = [
+      revision,
+      _dateFilter,
+      _customDateRange,
+      now.year,
+      now.month,
+      now.day,
+    ].join('-');
+    if (_queryKey != key) {
+      _queryKey = key;
+      final period = analyticsPeriod(
+        _dateFilter,
+        now,
+        customStart: _customDateRange?.start,
+        customEnd: _customDateRange?.end,
+      );
+      _categoryFuture = DatabaseHelper().database.then(
+        (db) => TransactionQueries.categories(
+          db,
+          start: period.start,
+          end: period.end,
+        ),
+      );
     }
+    return _categoryFuture!;
   }
 
   Future<void> _pickCustomDateRange(BuildContext context) async {
     final now = DateTime.now();
-    final initialRange = _customDateRange ??
-        DateTimeRange(
-          start: now.subtract(const Duration(days: 7)),
-          end: now,
-        );
+    final initialRange =
+        _customDateRange ??
+        DateTimeRange(start: now.subtract(const Duration(days: 7)), end: now);
 
     final picked = await showDateRangePicker(
       context: context,
@@ -124,8 +125,8 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
         return Theme(
           data: Theme.of(context).copyWith(
             colorScheme: Theme.of(context).colorScheme.copyWith(
-                  primary: Theme.of(context).colorScheme.primary,
-                ),
+              primary: Theme.of(context).colorScheme.primary,
+            ),
           ),
           child: child!,
         );
@@ -151,8 +152,8 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
         return Theme(
           data: Theme.of(context).copyWith(
             colorScheme: Theme.of(context).colorScheme.copyWith(
-                  primary: Theme.of(context).colorScheme.primary,
-                ),
+              primary: Theme.of(context).colorScheme.primary,
+            ),
           ),
           child: child!,
         );
@@ -171,6 +172,17 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
     switch (_dateFilter) {
       case AnalyticsDateFilter.today:
         return '${l10n.today} (${DateFormat.MMMd().format(DateTime.now())})';
+      case AnalyticsDateFilter.thisWeek:
+        final range = analyticsPeriod(
+          AnalyticsDateFilter.thisWeek,
+          DateTime.now(),
+        );
+        final lastDay = DateTime(
+          range.end!.year,
+          range.end!.month,
+          range.end!.day - 1,
+        );
+        return '${l10n.thisWeekFilter} (${DateFormat.MMMd().format(range.start!)} – ${DateFormat.MMMd().format(lastDay)})';
       case AnalyticsDateFilter.thisMonth:
         return '${l10n.thisMonth} (${DateFormat.MMMM().format(DateTime.now())})';
       case AnalyticsDateFilter.custom:
@@ -192,14 +204,21 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(l10n.analyticsAndTrends, style: const TextStyle(fontWeight: FontWeight.bold)),
+        title: Text(
+          l10n.analyticsAndTrends,
+          style: const TextStyle(fontWeight: FontWeight.bold),
+        ),
         actions: [
           IconButton(
             icon: Icon(
-              _chartType == ChartType.doughnut ? Icons.bar_chart : Icons.pie_chart,
+              _chartType == ChartType.doughnut
+                  ? Icons.bar_chart
+                  : Icons.pie_chart,
               color: theme.colorScheme.primary,
             ),
-            tooltip: _chartType == ChartType.doughnut ? 'Switch to Bar Chart' : 'Switch to Doughnut Chart',
+            tooltip: _chartType == ChartType.doughnut
+                ? 'Switch to Bar Chart'
+                : 'Switch to Doughnut Chart',
             onPressed: () {
               setState(() {
                 _chartType = _chartType == ChartType.doughnut
@@ -213,280 +232,349 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
       body: ParticleBackground(
         child: Consumer<TransactionProvider>(
           builder: (ctx, provider, _) {
-            final filteredExpenses = _filterExpenses(provider.transactions);
-
-            // Calculate category totals
-            final Map<Category, double> categoryTotals = {};
-            for (var txn in filteredExpenses) {
-              if (txn.category != null) {
-                categoryTotals[txn.category!] =
-                    (categoryTotals[txn.category!] ?? 0) + txn.amount;
-              }
-            }
-            final totalExpense = categoryTotals.values.fold(0.0, (a, b) => a + b);
-
-            int entryIndex = 0;
-
-            return Column(
-              children: [
-                const SizedBox(height: 8),
-
-                // Calendar Filter Bar (All Time, Today, This Month, Pick Date)
-                FadeInSlide(
-                  duration: const Duration(milliseconds: 350),
-                  child: SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: Row(
-                      children: [
-                        ChoiceChip(
-                          label: Text(l10n.allTime),
-                          selected: _dateFilter == AnalyticsDateFilter.allTime,
-                          onSelected: (_) => setState(() => _dateFilter = AnalyticsDateFilter.allTime),
-                        ),
-                        const SizedBox(width: 8),
-                        ChoiceChip(
-                          label: Text(l10n.today),
-                          selected: _dateFilter == AnalyticsDateFilter.today,
-                          onSelected: (_) => setState(() => _dateFilter = AnalyticsDateFilter.today),
-                        ),
-                        const SizedBox(width: 8),
-                        ChoiceChip(
-                          label: Text(l10n.thisMonth),
-                          selected: _dateFilter == AnalyticsDateFilter.thisMonth,
-                          onSelected: (_) => setState(() => _dateFilter = AnalyticsDateFilter.thisMonth),
-                        ),
-                        const SizedBox(width: 8),
-                        ChoiceChip(
-                          avatar: const Icon(Icons.calendar_month, size: 16),
-                          label: Text(_dateFilter == AnalyticsDateFilter.custom
-                              ? _getDateFilterLabel(l10n)
-                              : l10n.calendar),
-                          selected: _dateFilter == AnalyticsDateFilter.custom,
-                          onSelected: (_) => _showCalendarMenu(context),
-                        ),
-                      ],
+            return FutureBuilder<Map<Category, double>>(
+              future: _categories(provider.revision),
+              builder: (context, snapshot) {
+                if (snapshot.hasError) {
+                  return Center(
+                    child: TextButton(
+                      onPressed: () => setState(() => _queryKey = null),
+                      child: Text(l10n.loadError),
                     ),
-                  ),
-                ),
+                  );
+                }
+                if (!snapshot.hasData) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+                final categoryTotals = snapshot.data!;
+                final totalExpense = categoryTotals.values.fold(
+                  0.0,
+                  (a, b) => a + b,
+                );
 
-                const SizedBox(height: 12),
+                int entryIndex = 0;
 
-                // Summary Banner (Theme-adaptive with animated count text)
-                FadeInSlide(
-                  delayMilliseconds: 100,
-                  duration: const Duration(milliseconds: 400),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                      decoration: BoxDecoration(
-                        color: theme.colorScheme.primaryContainer.withValues(alpha: 0.3),
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(
-                          color: theme.colorScheme.primary.withValues(alpha: 0.2),
+                return Column(
+                  children: [
+                    const SizedBox(height: 8),
+
+                    // Calendar Filter Bar (All Time, Today, This Month, Pick Date)
+                    FadeInSlide(
+                      duration: const Duration(milliseconds: 350),
+                      child: SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        child: Row(
+                          children: [
+                            ChoiceChip(
+                              label: Text(l10n.today),
+                              selected:
+                                  _dateFilter == AnalyticsDateFilter.today,
+                              onSelected: (_) => setState(
+                                () => _dateFilter = AnalyticsDateFilter.today,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            ChoiceChip(
+                              label: Text(l10n.thisWeekFilter),
+                              selected:
+                                  _dateFilter == AnalyticsDateFilter.thisWeek,
+                              onSelected: (_) => setState(
+                                () =>
+                                    _dateFilter = AnalyticsDateFilter.thisWeek,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            ChoiceChip(
+                              label: Text(l10n.thisMonth),
+                              selected:
+                                  _dateFilter == AnalyticsDateFilter.thisMonth,
+                              onSelected: (_) => setState(
+                                () =>
+                                    _dateFilter = AnalyticsDateFilter.thisMonth,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            ChoiceChip(
+                              label: Text(l10n.allTime),
+                              selected:
+                                  _dateFilter == AnalyticsDateFilter.allTime,
+                              onSelected: (_) => setState(
+                                () => _dateFilter = AnalyticsDateFilter.allTime,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            ChoiceChip(
+                              avatar: const Icon(
+                                Icons.calendar_month,
+                                size: 16,
+                              ),
+                              label: Text(
+                                _dateFilter == AnalyticsDateFilter.custom
+                                    ? _getDateFilterLabel(l10n)
+                                    : l10n.calendar,
+                              ),
+                              selected:
+                                  _dateFilter == AnalyticsDateFilter.custom,
+                              onSelected: (_) => _showCalendarMenu(context),
+                            ),
+                          ],
                         ),
                       ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                _getDateFilterLabel(l10n),
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: theme.colorScheme.onSurfaceVariant,
-                                  fontWeight: FontWeight.w500,
-                                ),
+                    ),
+
+                    const SizedBox(height: 12),
+
+                    // Summary Banner (Theme-adaptive with animated count text)
+                    FadeInSlide(
+                      delayMilliseconds: 100,
+                      duration: const Duration(milliseconds: 400),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 12,
+                          ),
+                          decoration: BoxDecoration(
+                            color: theme.colorScheme.primaryContainer
+                                .withValues(alpha: 0.3),
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(
+                              color: theme.colorScheme.primary.withValues(
+                                alpha: 0.2,
                               ),
-                              const SizedBox(height: 2),
-                              AnimatedCountText(
-                                value: totalExpense,
-                                prefix: currency,
-                                style: TextStyle(
-                                  fontSize: 22,
-                                  fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    _getDateFilterLabel(l10n),
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: theme.colorScheme.onSurfaceVariant,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 2),
+                                  AnimatedCountText(
+                                    value: totalExpense,
+                                    prefix: currency,
+                                    style: TextStyle(
+                                      fontSize: 22,
+                                      fontWeight: FontWeight.bold,
+                                      color: theme.colorScheme.primary,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 6,
+                                ),
+                                decoration: BoxDecoration(
                                   color: theme.colorScheme.primary,
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                                child: Text(
+                                  l10n.spends,
+                                  style: TextStyle(
+                                    color: theme.colorScheme.onPrimary,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
                               ),
                             ],
                           ),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                            decoration: BoxDecoration(
-                              color: theme.colorScheme.primary,
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: Text(
-                              '${filteredExpenses.length} ${l10n.spends}',
-                              style: TextStyle(
-                                color: theme.colorScheme.onPrimary,
-                                fontSize: 12,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                        ],
+                        ),
                       ),
                     ),
-                  ),
-                ),
 
-                const SizedBox(height: 16),
+                    const SizedBox(height: 16),
 
-                if (totalExpense == 0)
-                  Expanded(
-                    child: Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Text('📊', style: TextStyle(fontSize: 64)),
-                          const SizedBox(height: 16),
-                          Text(
-                            l10n.noExpensesYet,
-                            style: theme.textTheme.titleLarge?.copyWith(
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            l10n.noExpensesPeriod,
-                            style: theme.textTheme.bodyMedium?.copyWith(
-                              color: theme.colorScheme.onSurfaceVariant,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  )
-                else
-                  Expanded(
-                    child: SingleChildScrollView(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: Column(
-                        children: [
-                          // Chart Container
-                          FadeInSlide(
-                            delayMilliseconds: 200,
-                            child: Card(
-                              elevation: 2,
-                              shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(20)),
-                              child: Padding(
-                                padding: const EdgeInsets.all(20),
-                                child: _chartType == ChartType.doughnut
-                                    ? _buildDoughnutChart(categoryTotals, totalExpense, currency, theme, l10n)
-                                    : _buildBarChart(categoryTotals, currency, theme, l10n),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-
-                          // Category Breakdown List
-                          FadeInSlide(
-                            delayMilliseconds: 250,
-                            child: Align(
-                              alignment: Alignment.centerLeft,
-                              child: Text(
-                                l10n.categoryBreakdown,
-                                style: theme.textTheme.titleMedium?.copyWith(
-                                  fontWeight: FontWeight.bold,
+                    if (totalExpense == 0)
+                      Expanded(
+                        child: Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Text('📊', style: TextStyle(fontSize: 64)),
+                              const SizedBox(height: 16),
+                              Text(
+                                l10n.noExpensesYet,
+                                style: theme.textTheme.titleLarge?.copyWith(
+                                  fontWeight: FontWeight.w600,
                                 ),
                               ),
-                            ),
+                              const SizedBox(height: 8),
+                              Text(
+                                l10n.noExpensesPeriod,
+                                style: theme.textTheme.bodyMedium?.copyWith(
+                                  color: theme.colorScheme.onSurfaceVariant,
+                                ),
+                              ),
+                            ],
                           ),
-                          const SizedBox(height: 10),
-
-                          ...categoryTotals.entries.map((entry) {
-                            final category = entry.key;
-                            final amount = entry.value;
-                            final percentage = (amount / totalExpense);
-                            final catColor = _categoryColor(category);
-                            final currentIndex = entryIndex++;
-
-                            return FadeInSlide(
-                              delayMilliseconds: 300 + (currentIndex * 50),
-                              child: Container(
-                                margin: const EdgeInsets.only(bottom: 10),
-                                padding: const EdgeInsets.all(14),
-                                decoration: BoxDecoration(
-                                  color: theme.colorScheme.surface,
-                                  borderRadius: BorderRadius.circular(16),
-                                  border: Border.all(
-                                    color: theme.colorScheme.outlineVariant
-                                        .withValues(alpha: 0.5),
+                        ),
+                      )
+                    else
+                      Expanded(
+                        child: SingleChildScrollView(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          child: Column(
+                            children: [
+                              // Chart Container
+                              FadeInSlide(
+                                delayMilliseconds: 200,
+                                child: Card(
+                                  elevation: 2,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(20),
+                                  ),
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(20),
+                                    child: _chartType == ChartType.doughnut
+                                        ? _buildDoughnutChart(
+                                            categoryTotals,
+                                            totalExpense,
+                                            currency,
+                                            theme,
+                                            l10n,
+                                          )
+                                        : _buildBarChart(
+                                            categoryTotals,
+                                            currency,
+                                            theme,
+                                            l10n,
+                                          ),
                                   ),
                                 ),
-                                child: Column(
-                                  children: [
-                                    Row(
+                              ),
+                              const SizedBox(height: 16),
+
+                              // Category Breakdown List
+                              FadeInSlide(
+                                delayMilliseconds: 250,
+                                child: Align(
+                                  alignment: Alignment.centerLeft,
+                                  child: Text(
+                                    l10n.categoryBreakdown,
+                                    style: theme.textTheme.titleMedium
+                                        ?.copyWith(fontWeight: FontWeight.bold),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 10),
+
+                              ...categoryTotals.entries.map((entry) {
+                                final category = entry.key;
+                                final amount = entry.value;
+                                final percentage = (amount / totalExpense);
+                                final catColor = _categoryColor(category);
+                                final currentIndex = entryIndex++;
+
+                                return FadeInSlide(
+                                  delayMilliseconds: 300 + (currentIndex * 50),
+                                  child: Container(
+                                    margin: const EdgeInsets.only(bottom: 10),
+                                    padding: const EdgeInsets.all(14),
+                                    decoration: BoxDecoration(
+                                      color: theme.colorScheme.surface,
+                                      borderRadius: BorderRadius.circular(16),
+                                      border: Border.all(
+                                        color: theme.colorScheme.outlineVariant
+                                            .withValues(alpha: 0.5),
+                                      ),
+                                    ),
+                                    child: Column(
                                       children: [
-                                        Container(
-                                          padding: const EdgeInsets.all(8),
-                                          decoration: BoxDecoration(
-                                            color: catColor.withValues(alpha: 0.15),
-                                            shape: BoxShape.circle,
-                                          ),
-                                          child: Text(
-                                            _categoryEmoji(category),
-                                            style: const TextStyle(fontSize: 20),
-                                          ),
-                                        ),
-                                        const SizedBox(width: 12),
-                                        Expanded(
-                                          child: Text(
-                                            _categoryLabel(category, l10n),
-                                            style: const TextStyle(
-                                              fontWeight: FontWeight.bold,
-                                              fontSize: 16,
-                                            ),
-                                          ),
-                                        ),
-                                        Column(
-                                          crossAxisAlignment: CrossAxisAlignment.end,
+                                        Row(
                                           children: [
-                                            AnimatedCountText(
-                                              value: amount,
-                                              prefix: currency,
-                                              style: const TextStyle(
-                                                fontWeight: FontWeight.bold,
-                                                fontSize: 16,
+                                            Container(
+                                              padding: const EdgeInsets.all(8),
+                                              decoration: BoxDecoration(
+                                                color: catColor.withValues(
+                                                  alpha: 0.15,
+                                                ),
+                                                shape: BoxShape.circle,
+                                              ),
+                                              child: Text(
+                                                _categoryEmoji(category),
+                                                style: const TextStyle(
+                                                  fontSize: 20,
+                                                ),
                                               ),
                                             ),
-                                            Text(
-                                              '${(percentage * 100).toStringAsFixed(1)}%',
-                                              style: TextStyle(
-                                                fontSize: 12,
-                                                color: theme.colorScheme.onSurfaceVariant,
+                                            const SizedBox(width: 12),
+                                            Expanded(
+                                              child: Text(
+                                                _categoryLabel(category, l10n),
+                                                style: const TextStyle(
+                                                  fontWeight: FontWeight.bold,
+                                                  fontSize: 16,
+                                                ),
                                               ),
+                                            ),
+                                            Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.end,
+                                              children: [
+                                                AnimatedCountText(
+                                                  value: amount,
+                                                  prefix: currency,
+                                                  style: const TextStyle(
+                                                    fontWeight: FontWeight.bold,
+                                                    fontSize: 16,
+                                                  ),
+                                                ),
+                                                Text(
+                                                  '${(percentage * 100).toStringAsFixed(1)}%',
+                                                  style: TextStyle(
+                                                    fontSize: 12,
+                                                    color: theme
+                                                        .colorScheme
+                                                        .onSurfaceVariant,
+                                                  ),
+                                                ),
+                                              ],
                                             ),
                                           ],
                                         ),
+                                        const SizedBox(height: 10),
+                                        ClipRRect(
+                                          borderRadius: BorderRadius.circular(
+                                            6,
+                                          ),
+                                          child: LinearProgressIndicator(
+                                            value: percentage,
+                                            minHeight: 6,
+                                            backgroundColor: catColor
+                                                .withValues(alpha: 0.15),
+                                            valueColor:
+                                                AlwaysStoppedAnimation<Color>(
+                                                  catColor,
+                                                ),
+                                          ),
+                                        ),
                                       ],
                                     ),
-                                    const SizedBox(height: 10),
-                                    ClipRRect(
-                                      borderRadius: BorderRadius.circular(6),
-                                      child: LinearProgressIndicator(
-                                        value: percentage,
-                                        minHeight: 6,
-                                        backgroundColor: catColor.withValues(alpha: 0.15),
-                                        valueColor: AlwaysStoppedAnimation<Color>(catColor),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            );
-                          }),
-                          const SizedBox(height: 24),
-                        ],
+                                  ),
+                                );
+                              }),
+                              const SizedBox(height: 24),
+                            ],
+                          ),
+                        ),
                       ),
-                    ),
-                  ),
-              ],
+                  ],
+                );
+              },
             );
           },
         ),
@@ -550,7 +638,10 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
           showTitle: false,
           badgeWidget: isTouched
               ? Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 6,
+                    vertical: 2,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.black87,
                     borderRadius: BorderRadius.circular(8),
@@ -577,6 +668,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
         alignment: Alignment.center,
         children: [
           PieChart(
+            swapAnimationDuration: Duration.zero,
             PieChartData(
               sections: sections,
               sectionsSpace: 4,
@@ -602,7 +694,9 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
             children: [
               Text(
                 _touchedIndex >= 0 && _touchedIndex < categoryTotals.length
-                    ? _categoryEmoji(categoryTotals.keys.elementAt(_touchedIndex))
+                    ? _categoryEmoji(
+                        categoryTotals.keys.elementAt(_touchedIndex),
+                      )
                     : '💸',
                 style: const TextStyle(fontSize: 22),
               ),
@@ -618,7 +712,10 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
               ),
               Text(
                 _touchedIndex >= 0 && _touchedIndex < categoryTotals.length
-                    ? _categoryLabel(categoryTotals.keys.elementAt(_touchedIndex), l10n).toUpperCase()
+                    ? _categoryLabel(
+                        categoryTotals.keys.elementAt(_touchedIndex),
+                        l10n,
+                      ).toUpperCase()
                     : l10n.totalExpense.toUpperCase(),
                 style: TextStyle(
                   fontSize: 10,
@@ -650,6 +747,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
     return SizedBox(
       height: 220,
       child: BarChart(
+        swapAnimationDuration: Duration.zero,
         BarChartData(
           alignment: BarChartAlignment.spaceAround,
           maxY: maxVal * 1.15,
@@ -660,7 +758,10 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                 final cat = entries[group.x.toInt()].key;
                 return BarTooltipItem(
                   '${_categoryEmoji(cat)} ${_categoryLabel(cat, l10n)}\n$currency${formatAmount(rod.toY)}',
-                  const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                  const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                  ),
                 );
               },
             ),
@@ -685,9 +786,15 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                 },
               ),
             ),
-            leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-            topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-            rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+            leftTitles: const AxisTitles(
+              sideTitles: SideTitles(showTitles: false),
+            ),
+            topTitles: const AxisTitles(
+              sideTitles: SideTitles(showTitles: false),
+            ),
+            rightTitles: const AxisTitles(
+              sideTitles: SideTitles(showTitles: false),
+            ),
           ),
           gridData: const FlGridData(show: false),
           borderData: FlBorderData(show: false),
@@ -700,7 +807,9 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                   toY: entry.value,
                   color: _categoryColor(entry.key),
                   width: 20,
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(8)),
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(8),
+                  ),
                 ),
               ],
             );

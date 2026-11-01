@@ -6,6 +6,10 @@ enum TransactionType { income, expense }
 
 class Transaction {
   int? id;
+  int? debtId;
+  int? debtRepaymentId;
+  bool get isDebtMovement => debtId != null;
+  bool get isDebtManaged => debtId != null || debtRepaymentId != null;
   TransactionType type;
   double amount;
   Category? category; // null for income
@@ -15,6 +19,8 @@ class Transaction {
 
   Transaction({
     this.id,
+    this.debtId,
+    this.debtRepaymentId,
     required this.type,
     required this.amount,
     this.category,
@@ -27,6 +33,8 @@ class Transaction {
   Map<String, dynamic> toMap() {
     return {
       'id': id,
+      'debt_id': debtId,
+      'debt_repayment_id': debtRepaymentId,
       'type': type == TransactionType.income ? 'income' : 'expense',
       'amount': amount,
       'category': category?.index, // store enum index (0..4)
@@ -39,12 +47,15 @@ class Transaction {
   factory Transaction.fromMap(Map<String, dynamic> map) {
     return Transaction(
       id: map['id'],
+      debtId: map['debt_id'],
+      debtRepaymentId: map['debt_repayment_id'],
       type: map['type'] == 'income'
           ? TransactionType.income
           : TransactionType.expense,
       amount: map['amount'].toDouble(),
-      category:
-          map['category'] != null ? Category.values[map['category']] : null,
+      category: map['category'] != null
+          ? Category.values[map['category']]
+          : null,
       remark: map['remark'],
       date: DateTime.parse(map['date']),
       // ✅ Old rows created before this column existed fall back to Cash.

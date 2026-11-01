@@ -47,7 +47,7 @@
   "addExpensesForAnalytics": "Füge Ausgaben hinzu, um Analysen zu sehen",
   "spendingByCategory": "Ausgaben nach Kategorie",
   "clearAllData": "Alle Daten löschen",
-  "clearAllDataConfirm": "Dadurch werden alle Transaktionen dauerhaft gelöscht. Fortfahren?",
+  "clearAllDataConfirm": "Dies löscht dauerhaft Buchungen, Schulden, Rückzahlungen, Kontakte, Budgets und eigene Geldbörsen und setzt Bargeld auf null. Exportiere zuerst ein Backup.",
   "yesClear": "Ja, löschen",
   "areYouAbsolutelySure": "Bist du dir absolut sicher?",
   "cannotBeUndone": "Das kann nicht rückgängig gemacht werden.",
@@ -99,5 +99,83 @@
   "noWalletsFound": "Keine Geldbörsen gefunden",
   "addYourFirstWallet": "Fügen Sie Ihre erste Geldbörse hinzu",
   "accounts": "Konten",
-  "addCustomizableWallet": "Anpassbare Geldbörse hinzufügen"
+  "addCustomizableWallet": "Anpassbare Geldbörse hinzufügen",
+  "debts": "Debts",
+  "iou": "IOU",
+  "lent": "Lent",
+  "borrowed": "Borrowed",
+  "outstanding": "Outstanding",
+  "partial": "Partial",
+  "archived": "Archived",
+  "owedToYou": "Owed to you",
+  "youOwe": "You owe",
+  "receivables": "Receivables",
+  "payables": "Payables",
+  "noDebts": "No debts yet. Tap + IOU to record one.",
+  "person": "Person",
+  "interest": "Flat interest",
+  "interestRate": "Interest (%)",
+  "totalDue": "Total due",
+  "dueDate": "Due date (optional)",
+  "note": "Note (optional)",
+  "recordRepayment": "Record repayment",
+  "repaymentRecorded": "Repayment recorded",
+  "markAsPaid": "Mark as paid",
+  "markedAsPaid": "Marked as paid",
+  "archive": "Archive",
+  "archiveConfirmation": "Archive this debt? It will leave active totals. Wallet movements stay unchanged.",
+  "paidConfirmation": "Record the full remaining amount as a repayment?",
+  "debtSaved": "Debt saved",
+  "debtError": "Could not save the change. Check the amount and wallet, then retry.",
+  "loadError": "Could not load data. Tap retry.",
+  "retry": "Retry",
+  "loadMore": "Load more",
+  "debtLocked": "Amount, interest, direction and wallet cannot change after a repayment.",
+  "repaymentAmount": "Repayment amount",
+  "debtAmountInvalid": "Enter an amount greater than zero, up to the remaining balance.",
+  "debtGuide": "Record money lent or borrowed using a real wallet. Optional interest is a flat percentage, off by default. Repayments pay principal first. Principal movements change your wallet balance but stay out of spending analytics; interest counts as income or expense. Fully repaid debts are archived automatically. Use CSV or Excel export to back up debts and repayments.",
+  "debtOverdue": "Overdue {days} days",
+  "debtDue": "Due {date}",
+  "debtPaid": "Paid {amount}",
+  "debtDelete": "Delete debt",
+  "debtDeleteConfirmation": "Delete this debt and reverse all its recorded wallet movements?",
+  "debtDeleted": "Debt deleted",
+  "debtWalletInUse": "This wallet has debt records. Keep it to preserve their payment history.",
+  "backupImported": "Backup imported",
+  "backupGuide": "Data and backup",
+  "@debtOverdue": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "@debtDue": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "@debtPaid": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "edit": "Edit",
+  "backupImportConfirmation": "This adds the backup to your existing data, including wallet starting balances, transactions, debts and repayments. Existing records stay. Importing the same backup twice creates duplicates.",
+  "recordDetails": "Buchungsdetails",
+  "transactionType": "Typ",
+  "recordedAt": "Zeitstempel",
+  "transactionCategory": "Kategorie",
+  "remarkLabel": "Notiz",
+  "incomeLabel": "Einnahme",
+  "expenseLabel": "Ausgabe",
+  "openDebt": "Schuld öffnen",
+  "managedDebtRecord": "Diese Buchung gehört zu einer Schuld. Öffne die Schuld, um sie zu bearbeiten oder ihre verknüpften Buchungen gemeinsam zu löschen.",
+  "thisWeekFilter": "Diese Woche",
+  "keepDataTitle": "Daten behalten",
+  "keepDataBody": "Updates behalten deine Daten. Stelle auf einem neuen Handy ein Android-Backup wieder her oder exportiere hier eine Datei und importiere sie auf dem neuen Handy. Bewahre das Backup außerhalb der App auf."
 }

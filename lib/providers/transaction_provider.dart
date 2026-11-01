@@ -1,181 +1,169 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import '../models/transaction.dart';
 import '../models/wallet.dart';
 import '../db/database_helper.dart';
+import '../db/transaction_queries.dart';
 
 class TransactionProvider extends ChangeNotifier {
-  List<Transaction> _transactions = [];
+  List<Transaction> _transactions = const [];
   List<Transaction> get transactions => _transactions;
-
-  // For filtering
+  List<Transaction> get filteredTransactions => transactions;
+  List<Map<String, Object?>> _totals = [];
+  bool loading = false, hasMore = false, failed = false;
+  int revision = 0, _generation = 0;
+  bool _totalsLoaded = false;
+  Timer? _searchTimer;
   String _searchQuery = '';
   String get searchQuery => _searchQuery;
-  set searchQuery(String val) {
-    _searchQuery = val;
-    notifyListeners();
+  set searchQuery(String value) {
+    if (value == _searchQuery) return;
+    _searchQuery = value;
+    // Invalidate old responses immediately, even before the debounce fires.
+    _generation++;
+    _searchTimer?.cancel();
+    _searchTimer = Timer(
+      const Duration(milliseconds: 200),
+      () => loadTransactions(refreshTotals: false),
+    );
   }
 
-  // Optional category filter
   Category? _categoryFilter;
   Category? get categoryFilter => _categoryFilter;
-  set categoryFilter(Category? val) {
-    _categoryFilter = val;
-    notifyListeners();
+  set categoryFilter(Category? value) {
+    if (value == _categoryFilter) return;
+    _categoryFilter = value;
+    unawaited(loadTransactions(refreshTotals: false));
   }
 
-  // ✅ Optional wallet filter — defaults to Cash (id 1).
   int? _walletFilter = Wallet.cashWalletId;
   int? get walletFilter => _walletFilter;
-  set walletFilter(int? val) {
-    _walletFilter = val;
+  set walletFilter(int? value) {
+    if (value == _walletFilter) return;
+    _walletFilter = value;
+    unawaited(loadTransactions(refreshTotals: false));
+  }
+
+  Future<void> loadTransactions({bool refreshTotals = true}) async {
+    refreshTotals = refreshTotals || !_totalsLoaded;
+    final generation = ++_generation;
+    loading = true;
+    failed = false;
     notifyListeners();
+    try {
+      final db = await DatabaseHelper().database;
+      final results = await Future.wait([
+        TransactionQueries.page(
+          db,
+          walletId: _walletFilter,
+          category: _categoryFilter,
+          search: _searchQuery,
+        ),
+        refreshTotals
+            ? TransactionQueries.totals(db, DateTime.now())
+            : Future.value(_totals),
+      ]);
+      if (generation != _generation) return;
+      _transactions = List.unmodifiable(results[0] as List<Transaction>);
+      _totals = results[1] as List<Map<String, Object?>>;
+      hasMore = _transactions.length == 50;
+      if (refreshTotals) {
+        _totalsLoaded = true;
+        revision++;
+      }
+    } catch (_) {
+      if (generation == _generation) failed = true;
+    } finally {
+      if (generation == _generation) {
+        loading = false;
+        notifyListeners();
+      }
+    }
   }
 
-  TransactionProvider() {
-    loadTransactions();
-  }
-
-  Future<void> loadTransactions() async {
-    final list = await DatabaseHelper().getAllTransactions();
-    _transactions = list;
+  Future<void> loadMore() async {
+    if (loading || !hasMore || _transactions.isEmpty) return;
+    final generation = _generation;
+    loading = true;
     notifyListeners();
-  }
-
-  // ✅ All the computed getters below operate on this wallet-scoped list,
-  // so switching the wallet selector updates balance/income/expense too.
-  List<Transaction> get _walletScoped {
-    if (_walletFilter == null) return _transactions;
-    return _transactions.where((t) => t.walletId == _walletFilter).toList();
-  }
-
-  List<Transaction> get filteredTransactions {
-    return _walletScoped.where((txn) {
-      // category filter
-      if (_categoryFilter != null && txn.category != _categoryFilter) {
-        return false;
+    try {
+      final rows = await TransactionQueries.page(
+        await DatabaseHelper().database,
+        walletId: _walletFilter,
+        category: _categoryFilter,
+        search: _searchQuery,
+        before: _transactions.last,
+      );
+      if (generation != _generation) return;
+      _transactions = List.unmodifiable([..._transactions, ...rows]);
+      hasMore = rows.length == 50;
+    } catch (_) {
+      if (generation == _generation) failed = true;
+    } finally {
+      if (generation == _generation) {
+        loading = false;
+        notifyListeners();
       }
-      // search (remark contains query)
-      if (_searchQuery.isNotEmpty) {
-        final remark = txn.remark?.toLowerCase() ?? '';
-        return remark.contains(_searchQuery.toLowerCase());
-      }
-      return true;
-    }).toList();
+    }
   }
 
   Future<void> addTransaction(Transaction txn) async {
-    final id = await DatabaseHelper().insertTransaction(txn);
-    txn.id = id;
-    _transactions.insert(0, txn);
-    notifyListeners();
+    if (txn.isDebtManaged) throw StateError('debt');
+    await DatabaseHelper().insertTransaction(txn);
+    await loadTransactions();
   }
 
   Future<void> updateTransaction(Transaction txn) async {
+    if (txn.isDebtManaged) throw StateError('debt');
     await DatabaseHelper().updateTransaction(txn);
-    final index = _transactions.indexWhere((t) => t.id == txn.id);
-    if (index != -1) {
-      _transactions[index] = txn;
-      notifyListeners();
-    }
+    await loadTransactions();
   }
 
   Future<void> deleteTransaction(int id) async {
     await DatabaseHelper().deleteTransaction(id);
-    _transactions.removeWhere((t) => t.id == id);
-    notifyListeners();
+    await loadTransactions();
   }
 
-  // ✅ Called after a wallet gets deleted (its transactions are already
-  // gone from the DB via DatabaseHelper.deleteWallet) so the in-memory
-  // list matches — otherwise deleted-wallet transactions would linger
-  // until the next app restart.
   void removeTransactionsForWallet(int walletId) {
-    _transactions.removeWhere((t) => t.walletId == walletId);
-    notifyListeners();
+    if (_walletFilter == walletId) _walletFilter = null;
+    unawaited(loadTransactions());
   }
 
-  // For undo: we can keep a soft-deleted transaction in memory
   Transaction? _lastDeleted;
   Transaction? get lastDeleted => _lastDeleted;
-
-  void softDelete(int id) {
-    final index = _transactions.indexWhere((t) => t.id == id);
-    if (index != -1) {
-      _lastDeleted = _transactions[index];
-      _transactions.removeAt(index);
-      notifyListeners();
-    }
+  Future<void> softDelete(int id) async {
+    final txn = _transactions.firstWhere((t) => t.id == id);
+    if (txn.isDebtManaged) return;
+    _lastDeleted = txn;
+    await deleteTransaction(id);
   }
 
-  void undoDelete() {
-    if (_lastDeleted != null) {
-      _transactions.insert(0, _lastDeleted!);
-      _lastDeleted = null;
-      notifyListeners();
-      // also re-insert into DB?
-      // We'll handle in UI: after undo, we call addTransaction again.
-    }
+  Future<void> undoDelete() async {
+    final txn = _lastDeleted;
+    if (txn == null) return;
+    _lastDeleted = null;
+    await DatabaseHelper().insertTransaction(txn);
+    await loadTransactions();
   }
 
-  double netBalanceForWallet(int walletId) {
-    double income = 0, expense = 0;
-    for (var txn in _transactions) {
-      if (txn.walletId == walletId) {
-        if (txn.type == TransactionType.income) {
-          income += txn.amount;
-        } else {
-          expense += txn.amount;
-        }
-      }
-    }
-    return income - expense;
-  }
+  double _sum(String column, {int? wallet, bool scoped = true}) => _totals
+      .where(
+        (r) =>
+            (scoped ? _walletFilter : wallet) == null ||
+            r['wallet_id'] == (scoped ? _walletFilter : wallet),
+      )
+      .fold(0.0, (sum, r) => sum + (r[column] as num).toDouble());
+  double netBalanceForWallet(int id) =>
+      _sum('balance', wallet: id, scoped: false);
+  double get totalBalance => _sum('balance');
+  double get totalIncome => _sum('income');
+  double get totalExpense => _sum('expense');
+  double get weeklyIncome => _sum('weekly_income');
+  double get weeklyExpense => _sum('weekly_expense');
 
-  // Computed values (wallet-scoped)
-  double get totalBalance {
-    double income = 0, expense = 0;
-    for (var txn in _walletScoped) {
-      if (txn.type == TransactionType.income) {
-        income += txn.amount;
-      } else {
-        expense += txn.amount;
-      }
-    }
-    return income - expense;
-  }
-
-  double get totalIncome => _walletScoped
-      .where((t) => t.type == TransactionType.income)
-      .fold(0, (sum, t) => sum + t.amount);
-
-  double get totalExpense => _walletScoped
-      .where((t) => t.type == TransactionType.expense)
-      .fold(0, (sum, t) => sum + t.amount);
-
-  // Weekly summary (current calendar week), wallet-scoped
-  double get weeklyIncome {
-    final now = DateTime.now();
-    final startOfWeek = now.subtract(Duration(days: now.weekday - 1));
-    return _walletScoped
-        .where(
-          (t) =>
-              t.type == TransactionType.income &&
-              t.date.isAfter(startOfWeek) &&
-              t.date.isBefore(now.add(const Duration(days: 1))),
-        )
-        .fold(0, (sum, t) => sum + t.amount);
-  }
-
-  double get weeklyExpense {
-    final now = DateTime.now();
-    final startOfWeek = now.subtract(Duration(days: now.weekday - 1));
-    return _walletScoped
-        .where(
-          (t) =>
-              t.type == TransactionType.expense &&
-              t.date.isAfter(startOfWeek) &&
-              t.date.isBefore(now.add(const Duration(days: 1))),
-        )
-        .fold(0, (sum, t) => sum + t.amount);
+  @override
+  void dispose() {
+    _searchTimer?.cancel();
+    super.dispose();
   }
 }
