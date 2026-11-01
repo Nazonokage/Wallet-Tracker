@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+- Applied the flying-banknote bird logo to Android, iOS, macOS, Windows and web
+  icons, with a pale mint background. Added the transparent source artwork and a
+  repeatable PowerShell icon-generation script.
+
 ## v1.9 — 2026-11-02
 
 App version: `1.9.0+7`.
