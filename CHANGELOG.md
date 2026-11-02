@@ -1,5 +1,15 @@
 # Changelog
 
+## v2.1 — 2026-11-02
+
+App version: `2.1.0+9`.
+
+- Debts now opens with All selected, keeping partial repayments visible alongside
+  the Outstanding, Partial and Archived filters. Compacted filters and detail
+  actions, added an outlined calendar button, and spaced Wallet and Note fields.
+- Debt update validation: 21 debt tests passed, including narrow-screen light/dark
+  calendar checks; Flutter analysis clean.
+
 ## v2.0 — 2026-11-02
 
 App version: `2.0.0+8`.

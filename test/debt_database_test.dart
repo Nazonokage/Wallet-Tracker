@@ -7,6 +7,7 @@ import 'package:expense_tracker/db/database_helper.dart';
 import 'package:expense_tracker/db/debt_store.dart';
 import 'package:expense_tracker/db/transaction_queries.dart';
 import 'package:expense_tracker/models/debt.dart';
+import 'package:expense_tracker/providers/debt_provider.dart';
 import 'package:expense_tracker/models/transaction.dart';
 import 'package:expense_tracker/utils/backup_service.dart';
 import 'package:expense_tracker/utils/analytics_period.dart';
@@ -50,6 +51,52 @@ void main() {
     expect(() => debt().splitRepayment(11001), throwsArgumentError);
     expect(() => toMinor(double.nan), throwsArgumentError);
   });
+
+  test(
+    'All keeps partial repayments visible and preserves status filters',
+    () async {
+      final id = await store.save(debt());
+      final archivedId = await store.save(debt(person: 'Archived'));
+      await store.archive(archivedId);
+      final provider = DebtProvider(store: store);
+      addTearDown(provider.dispose);
+      await provider.load();
+      expect(provider.status, isNull);
+      expect(provider.debts.map((d) => d.id), [archivedId, id]);
+      await provider.repay(provider.debts.last, 4000);
+      final partial = provider.debts.last;
+      expect(partial.status, DebtStatus.partial);
+      expect(partial.remainingMinor, 7000);
+      expect((await store.repayments(id)).single.amountMinor, 4000);
+      await provider.load(filter: DebtStatus.outstanding);
+      expect(provider.debts, isEmpty);
+      await provider.load(filter: DebtStatus.partial);
+      expect(provider.debts.single.id, id);
+      await provider.load(filter: DebtStatus.archived);
+      expect(provider.debts.single.id, archivedId);
+      await provider.load(all: true);
+      expect(provider.status, isNull);
+      expect(provider.debts.length, 2);
+    },
+  );
+
+  test(
+    'All paginates across mixed debt statuses without skipping rows',
+    () async {
+      for (var i = 0; i < 32; i++) {
+        final id = await store.save(debt(person: 'Person $i'));
+        if (i.isEven) await store.repay(id, 100);
+      }
+      final first = await store.list(null);
+      final second = await store.list(null, beforeId: first.last.id);
+      expect(first.length, 30);
+      expect(second.length, 2);
+      expect(
+        {...first.map((d) => d.id), ...second.map((d) => d.id)}.length,
+        32,
+      );
+    },
+  );
 
   for (final direction in DebtDirection.values) {
     test(

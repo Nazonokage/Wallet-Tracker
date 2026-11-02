@@ -1,4 +1,4 @@
-# Wallet Tracker (v2.0)
+# Wallet Tracker (v2.1)
 
 See [CHANGELOG.md](CHANGELOG.md) for changes and known limitations.
 
@@ -190,6 +190,14 @@ as a workaround. Compare launching from the phone icon with comparable saved dat
 Gradle build duration is separate from app startup. Phone timings for the latest
 changes remain pending: the agent environment currently hits a Gradle loopback
 connection failure and has no attached ADB device.
+
+## v2.1 release
+
+App version: 2.1.0+9. Debts opens on All by default, keeping partial repayments
+visible. Status filters and detail actions are compact, the optional due date has
+an outlined calendar button, and Wallet and Note fields have additional spacing.
+Validation: 21 debt tests passed and Flutter analysis is clean. Device testing
+and release APK verification remain pending.
 
 ## v2.0 release
 

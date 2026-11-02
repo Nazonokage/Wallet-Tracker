@@ -8,7 +8,7 @@ class DebtProvider extends ChangeNotifier {
   List<Debt> debts = [];
   List<Contact> contacts = [];
   Map<DebtDirection, int> totals = {};
-  DebtStatus status = DebtStatus.outstanding;
+  DebtStatus? status;
   bool loading = false, hasMore = false;
   bool failed = false;
   int _generation = 0;
@@ -27,10 +27,14 @@ class DebtProvider extends ChangeNotifier {
     }
   }
 
-  Future<void> load({DebtStatus? filter, bool more = false}) async {
+  Future<void> load({
+    DebtStatus? filter,
+    bool all = false,
+    bool more = false,
+  }) async {
     if (more && (loading || !hasMore)) return;
     final generation = ++_generation;
-    status = filter ?? status;
+    status = all ? null : filter ?? status;
     loading = true;
     failed = false;
     if (!more) debts = [];

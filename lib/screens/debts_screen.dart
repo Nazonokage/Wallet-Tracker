@@ -40,7 +40,7 @@ class _DebtsScreenState extends State<DebtsScreen> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
-        context.read<DebtProvider>().load(filter: DebtStatus.outstanding);
+        context.read<DebtProvider>().load(all: true);
       }
     });
   }
@@ -105,21 +105,29 @@ class _DebtsScreenState extends State<DebtsScreen> {
           ),
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 12),
             child: Row(
               children: [
-                for (final s in DebtStatus.values)
+                for (final s in <DebtStatus?>[null, ...DebtStatus.values])
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 4),
                     child: ChoiceChip(
+                      showCheckmark: false,
+                      padding: const EdgeInsets.symmetric(horizontal: 4),
+                      labelPadding: const EdgeInsets.symmetric(horizontal: 6),
+                      visualDensity: VisualDensity.compact,
                       label: Text(
-                        s == DebtStatus.outstanding
+                        s == null
+                            ? l.allWallets
+                            : s == DebtStatus.outstanding
                             ? l.outstanding
                             : s == DebtStatus.partial
                             ? l.partial
                             : l.archived,
                       ),
                       selected: provider.status == s,
-                      onSelected: (_) => provider.load(filter: s),
+                      onSelected: (_) =>
+                          provider.load(filter: s, all: s == null),
                     ),
                   ),
               ],
@@ -432,36 +440,45 @@ class _DebtFormState extends State<DebtForm> {
               '${l.totalDue}: ${debtMoney(context, _minor > 0 && _percent.isFinite && _percent >= 0 && _percent <= 100000 ? Debt.totalDue(_minor, _percent) : 0)}',
             ),
             if (_locked) Text(l.debtLocked),
-            ListTile(
-              contentPadding: EdgeInsets.zero,
-              title: Text(l.dueDate),
-              subtitle: _due == null
-                  ? null
-                  : Text(
-                      MaterialLocalizations.of(
-                        context,
-                      ).formatCompactDate(_due!),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton.icon(
+                    icon: const Icon(Icons.calendar_month_outlined),
+                    label: Text(
+                      _due == null
+                          ? l.dueDate
+                          : '${l.dueDate}: ${MaterialLocalizations.of(context).formatCompactDate(_due!)}',
                     ),
-              trailing: _due == null
-                  ? null
-                  : IconButton(
-                      onPressed: _saving
-                          ? null
-                          : () => setState(() => _due = null),
-                      icon: const Icon(Icons.clear),
-                    ),
-              onTap: _saving
-                  ? null
-                  : () async {
-                      final day = await showDatePicker(
-                        context: context,
-                        initialDate: _due ?? DateTime.now(),
-                        firstDate: DateTime(2000),
-                        lastDate: DateTime(2100),
-                      );
-                      if (mounted && day != null) setState(() => _due = day);
-                    },
+                    onPressed: _saving
+                        ? null
+                        : () async {
+                            final day = await showDatePicker(
+                              context: context,
+                              initialDate: _due ?? DateTime.now(),
+                              firstDate: DateTime(2000),
+                              lastDate: DateTime(2100),
+                            );
+                            if (mounted && day != null) {
+                              setState(() => _due = day);
+                            }
+                          },
+                  ),
+                ),
+                if (_due != null)
+                  IconButton(
+                    tooltip: MaterialLocalizations.of(
+                      context,
+                    ).deleteButtonTooltip,
+                    onPressed: _saving
+                        ? null
+                        : () => setState(() => _due = null),
+                    icon: const Icon(Icons.clear),
+                  ),
+              ],
             ),
+            const SizedBox(height: 16),
             DropdownButtonFormField<int>(
               initialValue: _wallet,
               decoration: InputDecoration(labelText: l.wallet),
@@ -473,6 +490,7 @@ class _DebtFormState extends State<DebtForm> {
                   ? null
                   : (v) => setState(() => _wallet = v),
             ),
+            const SizedBox(height: 16),
             TextField(
               controller: _note,
               enabled: !_saving,
@@ -630,71 +648,85 @@ class _DebtDetailState extends State<DebtDetail> {
           ),
           if (d.note?.isNotEmpty ?? false) Text(d.note!),
           if (_failed) Text(l.debtError),
-          if (d.active) ...[
-            TextButton(
-              onPressed: _busy
-                  ? null
-                  : () async {
-                      final host = Navigator.of(context).context;
-                      Navigator.pop(context);
-                      await showDebtForm(host, debt: d);
-                    },
-              child: Text(l.edit),
-            ),
-            FilledButton(
-              onPressed: _busy ? null : _repay,
-              child: Text(l.recordRepayment),
-            ),
-            TextButton(
-              onPressed: _busy
-                  ? null
-                  : () async {
-                      if (await _confirm(l.markAsPaid, l.paidConfirmation) &&
-                          mounted) {
-                        await _perform(
-                          () => context.read<DebtProvider>().repay(
-                            d,
-                            d.remainingMinor,
-                          ),
-                          l.markedAsPaid,
-                        );
-                      }
-                    },
-              child: Text(l.markAsPaid),
-            ),
-            TextButton(
-              onPressed: _busy
-                  ? null
-                  : () async {
-                      if (await _confirm(l.archive, l.archiveConfirmation) &&
-                          mounted) {
-                        await _perform(
-                          () => context.read<DebtProvider>().archive(d),
-                          l.archived,
-                        );
-                      }
-                    },
-              child: Text(l.archive),
-            ),
-          ],
-          TextButton(
-            onPressed: _busy
-                ? null
-                : () async {
-                    if (await _confirm(
-                          l.debtDelete,
-                          l.debtDeleteConfirmation,
-                        ) &&
-                        mounted) {
-                      await _perform(() async {
-                        final p = context.read<DebtProvider>();
-                        await p.store.delete(d.id!);
-                        await p.load();
-                      }, l.debtDeleted);
-                    }
-                  },
-            child: Text(l.debtDelete),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 8,
+            runSpacing: 4,
+            children: [
+              if (d.active) ...[
+                TextButton(
+                  onPressed: _busy
+                      ? null
+                      : () async {
+                          final host = Navigator.of(context).context;
+                          Navigator.pop(context);
+                          await showDebtForm(host, debt: d);
+                        },
+                  child: Text(l.edit),
+                ),
+                FilledButton(
+                  onPressed: _busy ? null : _repay,
+                  child: Text(l.recordRepayment),
+                ),
+                TextButton(
+                  onPressed: _busy
+                      ? null
+                      : () async {
+                          if (await _confirm(
+                                l.markAsPaid,
+                                l.paidConfirmation,
+                              ) &&
+                              mounted) {
+                            await _perform(
+                              () => context.read<DebtProvider>().repay(
+                                d,
+                                d.remainingMinor,
+                              ),
+                              l.markedAsPaid,
+                            );
+                          }
+                        },
+                  child: Text(l.markAsPaid),
+                ),
+                TextButton(
+                  onPressed: _busy
+                      ? null
+                      : () async {
+                          if (await _confirm(
+                                l.archive,
+                                l.archiveConfirmation,
+                              ) &&
+                              mounted) {
+                            await _perform(
+                              () => context.read<DebtProvider>().archive(d),
+                              l.archived,
+                            );
+                          }
+                        },
+                  child: Text(l.archive),
+                ),
+              ],
+              TextButton(
+                onPressed: _busy
+                    ? null
+                    : () async {
+                        if (await _confirm(
+                              l.debtDelete,
+                              l.debtDeleteConfirmation,
+                            ) &&
+                            mounted) {
+                          await _perform(() async {
+                            final p = context.read<DebtProvider>();
+                            await p.store.delete(d.id!);
+                            await p.load();
+                          }, l.debtDeleted);
+                        }
+                      },
+                child: Text(l.debtDelete),
+              ),
+            ],
           ),
+          const SizedBox(height: 12),
           Flexible(
             child: FutureBuilder<List<DebtRepayment>>(
               future: _repayments,

@@ -65,12 +65,19 @@ class DebtStore {
     }
   }
 
-  Future<List<Debt>> list(DebtStatus status, {int? beforeId}) async {
+  Future<List<Debt>> list(DebtStatus? status, {int? beforeId}) async {
     final db = await _open();
+    final conditions = [
+      if (status != null) 'status = ?',
+      if (beforeId != null) 'id < ?',
+    ];
     return (await db.query(
       'debts',
-      where: 'status = ? ${beforeId == null ? '' : 'AND id < ?'}',
-      whereArgs: [status.name, if (beforeId != null) beforeId],
+      where: conditions.isEmpty ? null : conditions.join(' AND '),
+      whereArgs: [
+        if (status != null) status.name,
+        if (beforeId != null) beforeId,
+      ],
       orderBy: 'id DESC',
       limit: 30,
     )).map(Debt.fromMap).toList();

@@ -1,6 +1,6 @@
 # Wallet Tracker UI
 
-Version 2.0 (`2.0.0+8`). Navigation: Wallets, Dashboard, Analytics, Settings.
+Version 2.1 (`2.1.0+9`). Navigation: Wallets, Dashboard, Analytics, Settings.
 Dashboard opens by default. Debts is reached from its neutral outlined dashboard
 action or the debt card in Wallets; IOU opens the entry form below the balance.
 
