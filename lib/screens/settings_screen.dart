@@ -51,13 +51,13 @@ class SettingsScreen extends StatelessWidget {
           // Region = language + currency (with flags)
           ListTile(
             title: Text(AppLocalizations.of(context).language),
-            subtitle: Text(settings.currentRegion.label),
-            trailing: DropdownButton<String>(
+            subtitle: DropdownButton<String>(
+              isExpanded: true,
               value: settings.regionId,
               items: SettingsProvider.regionPresets.map((RegionPreset r) {
                 return DropdownMenuItem<String>(
                   value: r.id,
-                  child: Text(r.label),
+                  child: Text(r.label, overflow: TextOverflow.ellipsis),
                 );
               }).toList(),
               onChanged: (id) {
@@ -73,10 +73,8 @@ class SettingsScreen extends StatelessWidget {
           // Theme picker
           ListTile(
             title: Text(AppLocalizations.of(context).theme),
-            subtitle: Text(
-              'Current: ${settings.currentTheme.name.toUpperCase()}',
-            ),
-            trailing: DropdownButton<AppTheme>(
+            subtitle: DropdownButton<AppTheme>(
+              isExpanded: true,
               value: settings.currentTheme,
               items: AppTheme.values.map((theme) {
                 return DropdownMenuItem<AppTheme>(

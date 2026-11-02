@@ -112,10 +112,84 @@ class MyApp extends StatelessWidget {
     return ThemeData(
       colorScheme: colorScheme,
       useMaterial3: true,
-      cardTheme: CardThemeData(
-        color: colorScheme.surface,
-        elevation: 2,
+      scaffoldBackgroundColor: colorScheme.surface,
+      appBarTheme: AppBarTheme(
+        backgroundColor: colorScheme.surface,
+        foregroundColor: colorScheme.onSurface,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        titleTextStyle: TextStyle(
+          color: colorScheme.onSurface,
+          fontSize: 24,
+          fontWeight: FontWeight.w700,
+        ),
+      ),
+      inputDecorationTheme: InputDecorationTheme(
+        filled: true,
+        fillColor: colorScheme.surfaceContainerLow,
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 16,
+        ),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: colorScheme.outlineVariant),
+        ),
+      ),
+      chipTheme: ChipThemeData(
+        backgroundColor: colorScheme.surface,
+        selectedColor: colorScheme.secondaryContainer,
+        side: BorderSide(color: colorScheme.outlineVariant),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+        labelStyle: TextStyle(
+          color: colorScheme.onSurface,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+      outlinedButtonTheme: OutlinedButtonThemeData(
+        style: OutlinedButton.styleFrom(
+          minimumSize: const Size(48, 48),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+      ),
+      elevatedButtonTheme: ElevatedButtonThemeData(
+        style: ElevatedButton.styleFrom(
+          minimumSize: const Size(48, 48),
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+      ),
+      bottomNavigationBarTheme: BottomNavigationBarThemeData(
+        elevation: 0,
+        backgroundColor: colorScheme.surface,
+        selectedItemColor: colorScheme.primary,
+        unselectedItemColor: colorScheme.onSurfaceVariant,
+        selectedLabelStyle: const TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.w600,
+        ),
+        unselectedLabelStyle: const TextStyle(fontSize: 12),
+      ),
+      dialogTheme: DialogThemeData(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      ),
+      bottomSheetTheme: const BottomSheetThemeData(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        clipBehavior: Clip.antiAlias,
+      ),
+      cardTheme: CardThemeData(
+        color: colorScheme.surfaceContainerLow,
+        elevation: 0,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       ),
     );
   }
@@ -130,8 +204,7 @@ class MainScreen extends StatefulWidget {
 }
 
 class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
-  int _selectedIndex = 0;
-  DebtDirectionFilter? _debtFilter;
+  int _selectedIndex = 1;
   bool _wasBackgrounded = false;
 
   @override
@@ -170,24 +243,24 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
   void _navigateToDashboardWithWallet(int? walletId) {
     context.read<WalletProvider>().selectWallet(walletId);
     context.read<TransactionProvider>().walletFilter = walletId;
-    setState(() => _selectedIndex = 0);
+    setState(() => _selectedIndex = 1);
   }
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final List<Widget> screens = [
-      const DashboardScreen(),
       WalletsScreen(
         onWalletSelected: _navigateToDashboardWithWallet,
         onDebtSelected: (filter) {
-          setState(() {
-            _debtFilter = filter;
-            _selectedIndex = 2;
-          });
+          Navigator.of(context).push(
+            MaterialPageRoute<void>(
+              builder: (_) => DebtsScreen(directionFilter: filter),
+            ),
+          );
         },
       ),
-      DebtsScreen(directionFilter: _debtFilter),
+      const DashboardScreen(),
       const AnalyticsScreen(),
       const SettingsScreen(),
     ];
@@ -198,16 +271,12 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
         type: BottomNavigationBarType.fixed,
         items: [
           BottomNavigationBarItem(
-            icon: const Icon(Icons.home),
-            label: l10n.dashboard,
-          ),
-          BottomNavigationBarItem(
             icon: const Icon(Icons.account_balance_wallet),
             label: l10n.walletsAndSavings,
           ),
           BottomNavigationBarItem(
-            icon: const Icon(Icons.handshake_outlined),
-            label: l10n.debts,
+            icon: const Icon(Icons.home),
+            label: l10n.dashboard,
           ),
           BottomNavigationBarItem(
             icon: const Icon(Icons.pie_chart),
@@ -219,10 +288,12 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
           ),
         ],
         currentIndex: _selectedIndex,
-        onTap: (index) => setState(() {
-          _selectedIndex = index;
-          _debtFilter = null;
-        }),
+        onTap: (index) {
+          if (index == _selectedIndex) return;
+          setState(() {
+            _selectedIndex = index;
+          });
+        },
       ),
     );
   }

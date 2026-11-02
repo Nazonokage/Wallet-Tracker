@@ -1,5 +1,12 @@
 # Wallet Tracker — Feature Roadmap
 
+> v2.0 status (2026-11-02): four bottom tabs (Wallets, Dashboard, Analytics,
+> Settings). Debts opens as a screen through Dashboard/Wallets, replacing the
+> original five-tab proposal below. Shared UI refresh and 31 tests validated.
+> Notifications, recurring entries, budgets, native splash and device profiling
+> remain pending. Release APK generation remains blocked by the agent's Gradle
+> loopback connection failure; no phone data was cleared or uninstalled.
+
 > Offline-first Flutter expense & savings tracker  
 > Last updated: 2026-11-01 (supersedes the 2026-09-26 version)
 
@@ -39,7 +46,7 @@ Read this whole file before writing code.
 - New bottom navigation tab for Debts
 
 ```
-Dashboard | Wallets | Debts | Analytics | Settings
+Wallets | Dashboard | Analytics | Settings
 ```
 
 ---
@@ -122,13 +129,17 @@ Error: 'Offset' isn't a type.   (hundreds more: Size, Rect, Axis, TextPainter, W
 ### 2.4 Motion & rendering at startup
 - [x] Ambient particles start after the first frame, sit inside a `RepaintBoundary`, have a capped particle count, and pause when the app is backgrounded.
 - [x] Wallet balance count-up animates only on balance changes, **not on cold start** (show the real number instantly).
-- [ ] Staggered entrance animations: first screen only, 30–50 ms between items, never blocking input. Skipped under reduced-motion.
-- [ ] Wallet logos: small WebP/PNG assets; `precacheImage` only for visible wallets.
-- [ ] `excel` / `csv` parsing runs only on import/export, inside `compute()` (isolate).
+- [x] Staggered entrance animations removed per the user's performance preference.
+- [x] Wallet logos use lightweight built-in text/icons; no image downloads or precaching needed.
+- [x] `excel` / `csv` parsing runs only on import/export, inside `compute()` (isolate).
 
 ### 2.5 List rendering
 - [ ] Use `ListView.builder` with `itemExtent` or `prototypeItem` where row height is fixed.
-- [ ] Use `Selector` / `context.select` so a change to one row does not rebuild the entire list.
+- [x] Use `Selector` / `context.select` for targeted provider updates.
+  Dashboard balance selects only displayed totals and wallet label, avoiding rebuilds
+  on pagination/loading notifications. Transaction rows select currency only.
+  List membership changes still rebuild the lazy list; variable-height rows retain
+  natural layout for accessibility rather than imposing a fixed height.
 
 **Acceptance:** release-mode time-to-first-frame measurably lower than baseline; dashboard scrolls smoothly with 5,000+ seeded transactions; no feature regressions.
 

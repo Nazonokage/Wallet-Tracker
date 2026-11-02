@@ -232,7 +232,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get portuguese => 'Português';
 
   @override
-  String get walletsAndSavings => '钱包与储蓄';
+  String get walletsAndSavings => '钱包';
 
   @override
   String get totalNetWorth => '总净资产';

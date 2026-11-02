@@ -5,6 +5,7 @@ import '../models/wallet.dart';
 import '../providers/wallet_provider.dart';
 import '../providers/transaction_provider.dart';
 import 'wallet_logo.dart';
+import '../screens/debts_screen.dart';
 import 'package:expense_tracker/l10n/app_localizations.dart';
 
 class WalletSelector extends StatelessWidget {
@@ -16,7 +17,7 @@ class WalletSelector extends StatelessWidget {
       builder: (ctx, walletProvider, _) {
         final wallets = walletProvider.wallets;
         return SizedBox(
-          height: 44,
+          height: 56,
           child: ListView(
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -46,6 +47,14 @@ class WalletSelector extends StatelessWidget {
                 ),
                 const SizedBox(width: 8),
               ],
+              ActionChip(
+                avatar: const Icon(Icons.handshake_outlined, size: 18),
+                label: Text(AppLocalizations.of(context).debts),
+                onPressed: () => Navigator.of(context).push(
+                  MaterialPageRoute<void>(builder: (_) => const DebtsScreen()),
+                ),
+              ),
+              const SizedBox(width: 8),
               ActionChip(
                 avatar: const Icon(Icons.add, size: 18),
                 label: Text(AppLocalizations.of(context).addWallet),

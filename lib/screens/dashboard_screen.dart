@@ -176,7 +176,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                               ),
                               child: TransactionListItem(
                                 txn: txn,
-                                alternate: index.isOdd,
+                                alternate: index.isEven,
                                 onTap: () => _showRecordDetails(txn),
                               ),
                             ),
@@ -216,8 +216,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   Widget _buildBalanceCard(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    return Consumer2<TransactionProvider, WalletProvider>(
-      builder: (ctx, txnProvider, walletProvider, _) {
+    final currency = context.select<SettingsProvider, String>(
+      (s) => s.currencySymbol,
+    );
+    return Selector2<
+      TransactionProvider,
+      WalletProvider,
+      (double, double, double, String)
+    >(
+      selector: (ctx, txnProvider, walletProvider) {
         final selectedWallet = walletProvider.selectedWallet;
         final startingBalance = selectedWallet != null
             ? selectedWallet.initialBalance
@@ -225,11 +232,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
         final balance = startingBalance + txnProvider.totalBalance;
         final weekIncome = txnProvider.weeklyIncome;
         final weekExpense = txnProvider.weeklyExpense;
-        final settings = Provider.of<SettingsProvider>(context);
-        final currency = settings.currencySymbol;
         final label = selectedWallet != null
             ? '${selectedWallet.icon} ${selectedWallet.name} ${l10n.balance}'
             : l10n.balanceAllWallets;
+        return (balance, weekIncome, weekExpense, label);
+      },
+      builder: (ctx, values, _) {
+        final (balance, weekIncome, weekExpense, label) = values;
         return Card(
           margin: const EdgeInsets.symmetric(horizontal: 16),
           child: Padding(

@@ -164,3 +164,9 @@ Each phase should be functionally testable on its own before moving to the next 
 - Full custom color picker (fixed named themes only for v1)
 
 These are all reasonable v2 ideas — just not needed to have a usable, shippable app.
+# Historical MVP plan
+
+This document records the original proposal. For v2.0 (`2.0.0+8`), use README.md,
+DESIGN.md and CHANGELOG.md for implemented behavior, and ROADMAP.md for outstanding
+work. The app now includes multiple wallets, debts and complete financial backups.
+Updates retain existing data; only explicit user deletion/reset actions remove it.

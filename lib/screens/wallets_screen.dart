@@ -26,6 +26,15 @@ class WalletsScreen extends StatefulWidget {
 }
 
 class _WalletsScreenState extends State<WalletsScreen> {
+  Widget _debtEntry(BuildContext context) => ListTile(
+    leading: const Icon(Icons.handshake_outlined),
+    title: Text(AppLocalizations.of(context).debts),
+    trailing: const Icon(Icons.chevron_right),
+    onTap: () => Navigator.of(
+      context,
+    ).push(MaterialPageRoute<void>(builder: (_) => const DebtsScreen())),
+  );
+
   @override
   void initState() {
     super.initState();
@@ -86,6 +95,7 @@ class _WalletsScreenState extends State<WalletsScreen> {
                       ),
                     ),
                     const SizedBox(height: 8),
+                    _debtEntry(context),
                     ElevatedButton.icon(
                       onPressed: () => _openAddWallet(context),
                       icon: const Icon(Icons.add),
@@ -254,29 +264,78 @@ class _WalletsScreenState extends State<WalletsScreen> {
                   const SizedBox(height: 8),
 
                   Consumer<DebtProvider>(
-                    builder: (context, debts, _) => Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(l10n.debts, style: theme.textTheme.titleMedium),
-                        for (final direction in DebtDirection.values)
-                          ListTile(
-                            title: Text(
-                              direction == DebtDirection.lent
-                                  ? l10n.receivables
-                                  : l10n.payables,
-                            ),
-                            trailing: Text(
-                              debtMoney(context, debts.totals[direction] ?? 0),
-                            ),
-                            onTap: () => widget.onDebtSelected?.call(
-                              direction == DebtDirection.lent
-                                  ? DebtDirectionFilter.lent
-                                  : DebtDirectionFilter.borrowed,
-                            ),
-                          ),
-                      ],
+                    builder: (context, debts, _) => Material(
+                      color: theme.colorScheme.primaryContainer,
+                      borderRadius: BorderRadius.circular(20),
+                      clipBehavior: Clip.antiAlias,
+                      child: Padding(
+                        padding: const EdgeInsets.all(20),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            _debtEntry(context),
+                            for (final direction in DebtDirection.values)
+                              Padding(
+                                padding: const EdgeInsets.only(top: 10),
+                                child: SizedBox(
+                                  width: double.infinity,
+                                  child: OutlinedButton(
+                                    style: OutlinedButton.styleFrom(
+                                      backgroundColor:
+                                          theme.colorScheme.surface,
+                                      foregroundColor:
+                                          theme.colorScheme.onSurface,
+                                      alignment: Alignment.centerLeft,
+                                    ),
+                                    child: Wrap(
+                                      spacing: 16,
+                                      runSpacing: 4,
+                                      crossAxisAlignment:
+                                          WrapCrossAlignment.center,
+                                      children: [
+                                        Text(
+                                          direction == DebtDirection.lent
+                                              ? l10n.receivables
+                                              : l10n.payables,
+                                        ),
+                                        Text(
+                                          debtMoney(
+                                            context,
+                                            debts.totals[direction] ?? 0,
+                                          ),
+                                        ),
+                                        const Icon(
+                                          Icons.chevron_right,
+                                          size: 18,
+                                        ),
+                                      ],
+                                    ),
+                                    onPressed: () {
+                                      final filter =
+                                          direction == DebtDirection.lent
+                                          ? DebtDirectionFilter.lent
+                                          : DebtDirectionFilter.borrowed;
+                                      if (widget.onDebtSelected != null) {
+                                        widget.onDebtSelected!(filter);
+                                      } else {
+                                        Navigator.of(context).push(
+                                          MaterialPageRoute<void>(
+                                            builder: (_) => DebtsScreen(
+                                              directionFilter: filter,
+                                            ),
+                                          ),
+                                        );
+                                      }
+                                    },
+                                  ),
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
                     ),
                   ),
+                  const SizedBox(height: 20),
                   // Add Wallet Button at bottom
                   SizedBox(
                     width: double.infinity,
@@ -329,13 +388,6 @@ class _WalletsScreenState extends State<WalletsScreen> {
       decoration: BoxDecoration(
         color: cardColor,
         borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: cardColor.withValues(alpha: 0.35),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
       ),
       child: Material(
         color: Colors.transparent,
@@ -397,7 +449,7 @@ class _WalletsScreenState extends State<WalletsScreen> {
 
                 // Bottom Row: Balance
                 Text(
-                  l10n.balance.toUpperCase(),
+                  l10n.balance,
                   style: TextStyle(
                     color: Colors.white.withValues(alpha: 0.65),
                     fontSize: 11,

@@ -1,6 +1,27 @@
 # Changelog
 
-## Unreleased
+## v2.0 — 2026-11-02
+
+App version: `2.0.0+8`.
+
+- Navigation now contains Wallets, Dashboard, Analytics and Settings. Dashboard
+  opens by default; Debts is available beside the dashboard wallet choices and in
+  Wallets, with IOU retained below the balance.
+- The selected wallet alone has a filled chip. Debts uses a neutral outlined action
+  so it cannot be mistaken for the active wallet. History begins with a lighter row.
+- Reduced balance-card rebuilds during pagination and selected only currency changes
+  in transaction rows. Skipped redundant taps on the current navigation tab.
+- Validation: Flutter analysis clean; 29 existing tests plus two added narrow-screen
+  light/dark layout tests passed. Real-device release verification remains pending.
+- Release APK generation is currently blocked in the agent environment by Gradle's
+  loopback connection error. The v2.0 source tag does not certify a built APK.
+
+- Refreshed shared app bars, inputs, chips, buttons, cards, navigation and sheets
+  across light/dark themes. Kept decorative animation disabled.
+- Made Receivables and Payables explicit buttons inside the debt wallet card;
+  aligned Dashboard choices and moved Settings selectors below their labels for
+  narrow screens. Removed colored wallet glows and uppercase balance labels.
+- Added light/dark 320px Dashboard and Settings layout checks and DESIGN.md.
 
 - Applied the flying-banknote bird logo to Android, iOS, macOS, Windows and web
   icons, with a pale mint background. Added the transparent source artwork and a

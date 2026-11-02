@@ -232,7 +232,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get portuguese => 'Português';
 
   @override
-  String get walletsAndSavings => 'ウォレットと貯金';
+  String get walletsAndSavings => 'ウォレット';
 
   @override
   String get totalNetWorth => '総資産額';

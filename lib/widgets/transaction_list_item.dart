@@ -20,11 +20,20 @@ class TransactionListItem extends StatelessWidget {
   Widget build(BuildContext context) {
     final isIncome = txn.type == TransactionType.income;
     final color = isIncome ? Colors.green : Colors.red;
-    final currency = Provider.of<SettingsProvider>(context).currencySymbol;
+    final currency = context.select<SettingsProvider, String>(
+      (s) => s.currencySymbol,
+    );
     final l = AppLocalizations.of(context);
     final colors = Theme.of(context).colorScheme;
     return Material(
-      color: alternate ? colors.surfaceContainerLow : colors.surface,
+      color: alternate
+          ? Color.alphaBlend(
+              Colors.white.withValues(
+                alpha: colors.brightness == Brightness.dark ? 0.06 : 0.65,
+              ),
+              colors.surface,
+            )
+          : colors.surface,
       child: ListTile(
         onTap: onTap,
         leading: Text(txn.categoryEmoji, style: const TextStyle(fontSize: 24)),

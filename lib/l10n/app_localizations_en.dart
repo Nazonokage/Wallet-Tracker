@@ -234,7 +234,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get portuguese => 'Português';
 
   @override
-  String get walletsAndSavings => 'Wallets & Savings';
+  String get walletsAndSavings => 'Wallets';
 
   @override
   String get totalNetWorth => 'Total Net Worth';

@@ -235,7 +235,7 @@ class AppLocalizationsPt extends AppLocalizations {
   String get portuguese => 'Português';
 
   @override
-  String get walletsAndSavings => 'Carteiras e Poupanças';
+  String get walletsAndSavings => 'Carteiras';
 
   @override
   String get totalNetWorth => 'Patrimônio Total';

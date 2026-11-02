@@ -1,4 +1,4 @@
-# Wallet Tracker (v1.9)
+# Wallet Tracker (v2.0)
 
 See [CHANGELOG.md](CHANGELOG.md) for changes and known limitations.
 
@@ -62,7 +62,7 @@ No cloud sync. No accounts. No ads. Just pure speed, privacy, and full visibilit
 
 | Layer | Choice | Notes |
 |---|---|---|
-| **Framework** | Flutter 3.27+ | Cross-platform (Android, iOS, Windows, Desktop) |
+| **Framework** | Flutter 3.38.1+ | Cross-platform (Android, iOS, Windows, Desktop) |
 | **Database** | SQLite (`sqflite`) | Fully offline storage with v3 migration logic |
 | **State Management** | Provider | Reactive state for transactions, wallets, and settings |
 | **Charts** | `fl_chart` | Interactive pie & bar charts |
@@ -132,7 +132,7 @@ error before assuming the cache path is responsible.
 
 ## Debts and first-install help
 
-The Debts tab records lent and borrowed money, optional flat interest, and partial
+The Debts screen records lent and borrowed money, optional flat interest, and partial
 repayments. Principal movements change the selected real wallet and stay out of
 income/expense analytics; interest counts normally. Fully paid debts archive
 automatically. Receivables and Payables show active balances in Wallets.
@@ -190,3 +190,23 @@ as a workaround. Compare launching from the phone icon with comparable saved dat
 Gradle build duration is separate from app startup. Phone timings for the latest
 changes remain pending: the agent environment currently hits a Gradle loopback
 connection failure and has no attached ADB device.
+
+## v2.0 release
+
+App version: 2.0.0+8. Bottom navigation: Wallets, Dashboard, Analytics, Settings.
+Debts opens from the dashboard wallet-choice strip or the debt card in Wallets.
+Cash is selected by default; only the selected wallet has a filled choice chip.
+IOU remains below the dashboard balance. Receivables/Payables are explicit buttons.
+
+Build the named Android artifact from the project root:
+
+```powershell
+.\scripts\build-release.ps1
+```
+
+The script creates `build/app/outputs/flutter-apk/Wallet-Tracker.apk` only after a
+successful release build and prints its SHA256. It uses the existing signing key
+and package ID. The current agent environment fails before compilation with
+Gradle's loopback connection error, including when using a local Java temp folder;
+no v2.0 APK has been produced here. Run the script in a working local terminal.
+The v2.0 source tag and APK build verification are separate; see CHANGELOG.md.

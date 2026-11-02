@@ -543,7 +543,7 @@ abstract class AppLocalizations {
   /// No description provided for @walletsAndSavings.
   ///
   /// In en, this message translates to:
-  /// **'Wallets & Savings'**
+  /// **'Wallets'**
   String get walletsAndSavings;
 
   /// No description provided for @totalNetWorth.
